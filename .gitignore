@@ -1,0 +1,24 @@
+# Build directory
+build/
+
+# Virtual disk images
+*.vdi
+*.img
+*.bin
+
+# Object files 
+*.o
+
+# VirtualBox and OS specific clutter
+VBox.log
+VBox.png
+*.log
+
+# Editor/IDE clutter
+.DS_Store
+.vscode/
+.idea/
+
+# Windows/OS metadata clutter
+Thumbs.db
+Desktop.ini
