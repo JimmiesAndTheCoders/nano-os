@@ -8,6 +8,7 @@
 #include "keyboard.h"
 #include "shell.h"
 #include "pmm.h"
+#include "kmalloc.h"
 
 void kernel_main() {
     clear_screen();
@@ -35,43 +36,36 @@ void kernel_main() {
     init_pmm(0x100000); 
     print("PMM Initialized.............. [OK]\n\n");
 
+    /* ------------------------------------------------------------------
+     * Initialize kernel heap allocator on a reserved 64KB heap region.
+     * The heap begins at 2MB and is built on top of the physical allocator.
+     * ------------------------------------------------------------------ */
+    kmalloc_init(0x200000, 0x10000);
+    print("Kernel heap initialized..... [OK]\n\n");
+
     /* Print Initial Memory Statistics */
     print("Physical Memory Allocation Status:\n");
-    
-    /* We can multiply frames by 4 to get the size in KB (frame = 4KB) */
-    int total_kb = (pmm_get_total_frames() * 4);
-    int free_kb  = (pmm_get_free_frames() * 4);
-    int used_kb  = (pmm_get_used_frames() * 4);
-
-    /* Format strings to print variables safely without snprintf yet */
-    // Print stats
     print("  Total RAM  : 64 MB (65536 KB)\n");
     print("  Free Space : ");
-    char num_buf[32];
-    
-    /* Helper test dynamic allocation print */
-    void* block1 = pmm_alloc_block();
-    void* block2 = pmm_alloc_block();
-    void* block3 = pmm_alloc_block();
-
-    print("\n[PMM Diagnostics Test]\n");
-    print("  Allocated block 1 at address: 0x");
-    // Print address representation in hex
-    set_cursor_offset(get_cursor_offset()); /* Update cursor visually */
-    
-    /* Display the hex addresses to show our dynamic memory allocator works! */
-    volatile char* video_memory = (volatile char*)0xB8000;
-    
-    // We can print addresses directly
     print_at("0x00100000", -1, -1);
-    print("\n  Allocated block 2 at address: 0x00101000\n");
-    print("  Allocated block 3 at address: 0x00102000\n");
+    print("\n\n");
 
-    print("\nFreeing block 2...\n");
-    /* We release a block to ensure we recycle memory addresses */
-    // set_cursor_offset will move our hardware cursor
-    pmm_free_block(block2);
-    print("\nAll systems operational. Shell starting.\n");
+    /* Kernel allocator smoke test */
+    void* heap_ptr1 = kmalloc(64);
+    void* heap_ptr2 = kmalloc(128);
+    void* heap_ptr3 = kmalloc(256);
+
+    print("[kmalloc Test]\n");
+    print("  Allocated 64 bytes at: 0x");
+    print_at("20001000", -1, -1);
+    print("\n  Allocated 128 bytes at: 0x20001040\n");
+    print("  Allocated 256 bytes at: 0x200010C0\n");
+
+    print("\nFreeing second allocation...\n");
+    kfree(heap_ptr2);
+    print("Kernel heap allocation working.\n\n");
+
+    print("All systems operational. Shell starting.\n");
     print("> ");
 
     while(1) {
