@@ -80,8 +80,8 @@ isr_common_stub:
     mov es, ax
     mov fs, ax
     mov gs, ax
-    popa                ; Pops edi, esi, ebp... etc
     add esp, 8          ; Cleans up the pushed error code and pushed ISR number
+    popa                ; Pops edi, esi, ebp... etc
     sti
     iret                ; Pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP
 
@@ -133,7 +133,7 @@ irq_common_stub:
     mov es, ax
     mov fs, ax
     mov gs, ax
-    popa
     add esp, 8
+    popa
     sti
     iret
