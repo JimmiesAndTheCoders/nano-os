@@ -9,6 +9,7 @@
 #include "shell.h"
 #include "pmm.h"
 #include "kmalloc.h"
+#include "timer.h"
 
 void kernel_main() {
     clear_screen();
@@ -19,6 +20,9 @@ void kernel_main() {
 
     /* Initialize Hardware Devices */
     init_keyboard();
+
+    /* Initialize the Programmable Interval Timer */
+    init_timer(100);
 
     /* Enable interrupts on the CPU! */
     __asm__ __volatile__("sti");
@@ -41,7 +45,8 @@ void kernel_main() {
      * The heap begins at 2MB and is built on top of the physical allocator.
      * ------------------------------------------------------------------ */
     kmalloc_init(0x200000, 0x10000);
-    print("Kernel heap initialized..... [OK]\n\n");
+    print("Kernel heap initialized..... [OK]\n");
+    print("PIT timer initialized....... [OK]\n\n");
 
     /* Print Initial Memory Statistics */
     print("Physical Memory Allocation Status:\n");
