@@ -171,8 +171,68 @@ init_pm:
     mov ebp, 0x90000        ; Set up stack pointer in a safe, free space
     mov esp, ebp
 
+    ; Initialize paging and enable virtual memory with an identity map.
+    call setup_paging
+
     ; JUMP straight to our loaded C kernel entry point!
     jmp KERNEL_OFFSET
+
+; ==============================================================================
+; Paging Setup
+; ==============================================================================
+PAGE_DIR_ADDR   equ 0x8000
+PAGE_TABLE_ADDR equ 0x9000
+PAGE_SIZE       equ 4096
+
+setup_paging:
+    push eax
+    push ebx
+    push ecx
+    push edi
+
+    ; Clear the page directory and page table
+    mov edi, PAGE_DIR_ADDR
+    mov ecx, 1024
+    xor eax, eax
+    rep stosd
+
+    mov edi, PAGE_TABLE_ADDR
+    mov ecx, 1024
+    xor eax, eax
+    rep stosd
+
+    ; Identity-map the first 4MB of memory using 4KB pages
+    mov edi, PAGE_TABLE_ADDR
+    mov ecx, 1024
+    xor eax, eax
+    mov ebx, 3              ; Present + Read/Write flags
+.page_loop:
+    mov edx, eax
+    or edx, ebx
+    mov [edi], edx
+    add edi, 4
+    add eax, PAGE_SIZE
+    loop .page_loop
+
+    ; Point the first directory entry to the page table
+    mov eax, PAGE_TABLE_ADDR
+    or eax, 3
+    mov [PAGE_DIR_ADDR], eax
+
+    ; Load page directory base into CR3
+    mov eax, PAGE_DIR_ADDR
+    mov cr3, eax
+
+    ; Enable paging by setting the PG bit in CR0
+    mov eax, cr0
+    or eax, 0x80000000
+    mov cr0, eax
+
+    pop edi
+    pop ecx
+    pop ebx
+    pop eax
+    ret
 
 ; ==============================================================================
 ; Padding and Boot Signature
