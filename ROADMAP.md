@@ -3,7 +3,7 @@
 This roadmap outlines the planned features and improvements for Nano OS. The project is in active development, and we welcome contributions from the community. Below are the key milestones and features we aim to implement in the coming months.
 
 - [X] Initialize the bootloader and setup the kernel.
-- [ ] Implement a bitmap-based memory allocator to track free/used frames.
+- [X] Implement a bitmap-based memory allocator to track free/used frames.
 - [ ] Enable virtual memory to support isolation between kernel and user space.
 - [ ] Implement `kmalloc` and `kfree` to support dynamic memory allocation in the kernel.
 - [ ] Implement the Programmable Interval Timer (PIT) to enable system ticks and multitasking.

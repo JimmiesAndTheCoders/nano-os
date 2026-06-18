@@ -22,3 +22,6 @@ VBox.png
 # Windows/OS metadata clutter
 Thumbs.db
 Desktop.ini
+
+# Other clutter
+nul
