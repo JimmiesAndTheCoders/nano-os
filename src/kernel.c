@@ -10,6 +10,27 @@
 #include "pmm.h"
 #include "kmalloc.h"
 #include "timer.h"
+#include "task.h"
+
+static void task_a() {
+    while (1) {
+        print("[Task A] Running...\n");
+        int i;
+        for (i = 0; i < 1000000; i++) {
+            __asm__ __volatile__("nop");
+        }
+    }
+}
+
+static void task_b() {
+    while (1) {
+        print("[Task B] Running...\n");
+        int i;
+        for (i = 0; i < 1000000; i++) {
+            __asm__ __volatile__("nop");
+        }
+    }
+}
 
 void kernel_main() {
     clear_screen();
@@ -23,6 +44,11 @@ void kernel_main() {
 
     /* Initialize the Programmable Interval Timer */
     init_timer(100);
+
+    /* Initialize basic tasking and create two demo tasks */
+    init_tasking();
+    task_add(task_a, 0x280000, "TaskA");
+    task_add(task_b, 0x290000, "TaskB");
 
     /* Enable interrupts on the CPU! */
     __asm__ __volatile__("sti");
