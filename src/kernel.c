@@ -11,6 +11,8 @@
 #include "kmalloc.h"
 #include "timer.h"
 #include "task.h"
+#include "initrd.h"
+#include "util.h"
 
 void dummy_task() {
     while(1) {
@@ -31,28 +33,41 @@ void dummy_task() {
 void kernel_main() {
     clear_screen();
     
-    /* 1. Core CPU Setup */
     isr_install();
     irq_install();
 
-    /* 2. Memory Setup (Crucial: Do this BEFORE multitasking) */
     init_pmm(0x100000); 
     kmalloc_init(0x200000, 0x10000);
+    
+    /* Initrd Setup */
+    init_initrd(0x9000);
+    initrd_header_t* h = (initrd_header_t*)0x9000;
+    h->nfiles = 2;
+    
+    memory_copy("hello.txt", h->files[0].name, 10);
+    h->files[0].offset = 1000;
+    h->files[0].length = 13;
+    memory_copy("Hello World!", (char*)(0x9000 + 1000), 13);
+    
+    memory_copy("note.txt", h->files[1].name, 9);
+    h->files[1].offset = 1100;
+    h->files[1].length = 25;
+    memory_copy("Nano OS RAM FS is active.", (char*)(0x9000 + 1100), 25);
 
-    /* 3. Hardware Setup */
+    print("Initrd System Loaded......... [OK]\n");
+
     init_keyboard();
     init_timer(100);
 
-    /* 4. Tasking Setup */
     init_tasking();
     task_add(dummy_task, "worker");
 
-    /* 5. Start the System */
+    /* Start the System */
     print("Welcome to Nano OS!\n");
-    print("All systems initialized. Enabling Multitasking...\n");
+    print("Type help for more information \n");
     
-    __asm__ __volatile__("sti"); // Start the PIT timer and scheduler
-
+    __asm__ __volatile__("sti");
+    
     print("nano> ");
 
     while(1) {

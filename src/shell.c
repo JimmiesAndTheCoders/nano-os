@@ -1,6 +1,7 @@
 #include "shell.h"
 #include "screen.h"
 #include "util.h"
+#include "initrd.h"
 
 void print_prompt() {
     print("nano> ");
@@ -11,6 +12,8 @@ void process_command(char *input) {
         print("Available Commands:\n");
         print("  help         - Display this reference panel.\n");
         print("  clear        - Clear the display terminal.\n");
+        print("  ls           - List available files on the RAM disk.\n");
+        print("  cat [file]   - Display the contents of a file.\n");
         print("  status       - Inspect system operational metrics.\n");
         print("  nano --status- Execute system mascot configuration check.\n");
         print("  halt         - Safely power down the hardware processor.\n");
@@ -37,7 +40,27 @@ void process_command(char *input) {
     } 
     else if (strlen(input) == 0) {
         /* User hit enter without typing anything, do nothing */
+    }
+    else if (strcmp(input, "ls") == 0) {
+        list_files();
     } 
+    else if (strcmp(input, "cat ") == 0 || (input[0]=='c' && input[1]=='a' && input[2]=='t')) {
+        // Basic check: if user typed "cat " followed by something
+        if (strlen(input) > 4) {
+            char* filename = input + 4; 
+            char* content = read_file(filename);
+            if (content) {
+                print(content);
+                print("\n");
+            } else {
+                print("Error: File '");
+                print(filename);
+                print("' not found.\n");
+            }
+        } else {
+            print("Usage: cat [filename]\n");
+        }
+    }
     else {
         print("Error: Unknown command '");
         print(input);

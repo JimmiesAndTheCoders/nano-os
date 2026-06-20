@@ -84,7 +84,7 @@ load_kernel_from_disk:
     mov bx, KERNEL_OFFSET
 
     mov ah, 0x02            ; BIOS Read Sectors function
-    mov al, 15              ; Read 15 sectors (approx 7.5KB of kernel space)
+    mov al, 50              ; INCREASED from 15 to 50 sectors
     mov ch, 0x00            ; Cylinder 0
     mov dh, 0x00            ; Head 0
     mov cl, 0x02            ; Sector 2 (Sector 1 is this bootloader!)

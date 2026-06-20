@@ -123,6 +123,8 @@ Once booted, interact with the system using the following commands:
 
 - `help`: Displays a list of available commands.
 - `clear`: Clears the screen.
+- `ls`: List available files on the RAM disk.
+- `cat [file]`: Display the contents of a file.
 - `status`: Displays kernel operational metrics.
 - `nano --status`: View system mascot information.
 - `halt`: Safely stops the CPU.
