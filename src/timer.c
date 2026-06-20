@@ -1,12 +1,13 @@
 #include "timer.h"
 #include "ports.h"
 #include "cpu.h"
+#include "task.h"
 
 static unsigned int timer_ticks = 0;
 
 void timer_callback(registers_t *regs) {
-    (void)regs;
-    timer_ticks++;
+    // Every tick, try to switch tasks
+    schedule(regs);
 }
 
 void init_timer(unsigned int frequency) {

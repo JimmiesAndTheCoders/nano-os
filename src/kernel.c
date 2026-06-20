@@ -10,70 +10,45 @@
 #include "pmm.h"
 #include "kmalloc.h"
 #include "timer.h"
+#include "task.h"
+
+void dummy_task() {
+    while(1) {
+        // We use a direct memory write so we don't mess up the shell cursor
+        char *video = (char*)0xb8000;
+        video[158] = (video[158] == '*') ? ' ' : '*'; // Blink '*' at top right
+        for(int i = 0; i < 1000000; i++); // Small delay
+    }
+}
 
 void kernel_main() {
     clear_screen();
     
-    /* Initialize the CPU's Interrupt Descriptor Table (IDT) */
+    /* 1. Core CPU Setup */
     isr_install();
     irq_install();
 
-    /* Initialize Hardware Devices */
-    init_keyboard();
+    /* 2. Memory Setup (Crucial: Do this BEFORE multitasking) */
+    init_pmm(0x100000); 
+    kmalloc_init(0x200000, 0x10000);
 
-    /* Initialize the Programmable Interval Timer */
+    /* 3. Hardware Setup */
+    init_keyboard();
     init_timer(100);
 
-    /* Enable interrupts on the CPU! */
-    __asm__ __volatile__("sti");
+    /* 4. Tasking Setup */
+    init_tasking();
+    task_add(dummy_task, "worker");
 
+    /* 5. Start the System */
     print("Welcome to Nano OS!\n");
-    print("Kernel initialized successfully.\n");
-    print("Hardware Interrupts mapped... [OK]\n");
-    print("Keyboard driver loaded....... [OK]\n");
+    print("All systems initialized. Enabling Multitasking...\n");
     
-    /* ------------------------------------------------------------------
-     * Initialize the Physical Memory Manager (PMM)
-     * Let's start free dynamic page allocation right above 1MB (0x100000).
-     * This fully protects our kernel (0x1000-0x10000) and the stack safely.
-     * ------------------------------------------------------------------ */
-    init_pmm(0x100000); 
-    print("PMM Initialized.............. [OK]\n\n");
+    __asm__ __volatile__("sti"); // Start the PIT timer and scheduler
 
-    /* ------------------------------------------------------------------
-     * Initialize kernel heap allocator on a reserved 64KB heap region.
-     * The heap begins at 2MB and is built on top of the physical allocator.
-     * ------------------------------------------------------------------ */
-    kmalloc_init(0x200000, 0x10000);
-    print("Kernel heap initialized..... [OK]\n");
-    print("PIT timer initialized....... [OK]\n\n");
-
-    /* Print Initial Memory Statistics */
-    print("Physical Memory Allocation Status:\n");
-    print("  Total RAM  : 64 MB (65536 KB)\n");
-    print("  Free Space : ");
-    print_at("0x00100000", -1, -1);
-    print("\n\n");
-
-    /* Kernel allocator smoke test */
-    void* heap_ptr1 = kmalloc(64);
-    void* heap_ptr2 = kmalloc(128);
-    void* heap_ptr3 = kmalloc(256);
-
-    print("[kmalloc Test]\n");
-    print("  Allocated 64 bytes at: 0x");
-    print_at("20001000", -1, -1);
-    print("\n  Allocated 128 bytes at: 0x20001040\n");
-    print("  Allocated 256 bytes at: 0x200010C0\n");
-
-    print("\nFreeing second allocation...\n");
-    kfree(heap_ptr2);
-    print("Kernel heap allocation working.\n\n");
-
-    print("All systems operational. Shell starting.\n");
     print("> ");
 
     while(1) {
-        /* Keep shell alive, listening to keyboard events */
+        // Task 0: Handle shell
     }
 }

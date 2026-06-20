@@ -86,18 +86,21 @@ void register_interrupt_handler(unsigned char n, isr_t handler) {
 }
 
 void isr_handler(registers_t *r) {
-	print("CPU EXCEPTION! System Halted.\n");
-	__asm__("hlt");
+    print("CPU EXCEPTION! System Halted.\n");
+    __asm__("hlt");
 }
 
-void irq_handler(registers_t *r) {
-	/* Send an EOI (End of Interrupt) signal to the PICs so they know we handled it */
-	if (r->int_no >= 40) port_byte_out(0xA0, 0x20); /* Slave */
-	port_byte_out(0x20, 0x20);  
+/* Change return type to unsigned int */
+unsigned int irq_handler(registers_t *r) {
+    if (r->int_no >= 40) port_byte_out(0xA0, 0x20); 
+    port_byte_out(0x20, 0x20);  
 
-	/* Handle the interrupt in C if we registered a callback */
-	if (interrupt_handlers[r->int_no] != 0) {
-		isr_t handler = interrupt_handlers[r->int_no];
-		handler(r);
-	}
+    if (interrupt_handlers[r->int_no] != 0) {
+        isr_t handler = interrupt_handlers[r->int_no];
+        handler(r);
+    }
+    
+    // Return the stack pointer (registers_t address)
+    // If schedule() modified the pointer, we return the NEW task's stack
+    return (unsigned int)r;
 }

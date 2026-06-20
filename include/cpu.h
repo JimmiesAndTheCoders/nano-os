@@ -32,7 +32,9 @@ typedef struct {
 void isr_install();
 void irq_install();
 
-/* Typedef for a generic interrupt handler function */
+unsigned int irq_handler(registers_t *r);
+void isr_handler(registers_t *r);
+
 typedef void (*isr_t)(registers_t*);
 void register_interrupt_handler(unsigned char n, isr_t handler);
 

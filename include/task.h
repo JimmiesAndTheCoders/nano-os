@@ -4,7 +4,7 @@
 #include "cpu.h"
 
 void init_tasking();
-void task_add(void (*entry)(), unsigned int stack_top, const char *name);
+void task_add(void (*entry)(), const char *name);
 void schedule(registers_t *regs);
 
 #endif

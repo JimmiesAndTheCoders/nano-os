@@ -124,16 +124,17 @@ irq_common_stub:
     mov fs, ax
     mov gs, ax
     
-    push esp            ; Pointer to registers_t struct
-    call irq_handler    ; Route to our C hardware handler!
-    add esp, 4
+    push esp            ; Push current stack pointer (registers_t*)
+    call irq_handler    ; Returns new stack pointer in EAX
+    ; --- FIX: We don't 'add esp, 4' here because we want to switch to EAX ---
+    mov esp, eax        ; Switch to the new stack (could be the same one or a new task)
     
-    pop eax
+    pop eax             ; Restore DS
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
-    add esp, 8
+    add esp, 8          ; Skip int_no and err_code
     popa
     sti
     iret
