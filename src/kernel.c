@@ -14,13 +14,20 @@
 
 void dummy_task() {
     while(1) {
-        // We use a direct memory write so we don't mess up the shell cursor
-        char *video = (char*)0xb8000;
-        video[158] = (video[158] == '*') ? ' ' : '*'; // Blink '*' at top right
-        for(int i = 0; i < 1000000; i++); // Small delay
+        volatile char *video = (char*)0xb8000; // 'volatile' prevents optimization
+        
+        // Offset 158 is the character, 159 is the color attribute
+        if (video[158] == '*') {
+            video[158] = ' ';
+        } else {
+            video[158] = '*';
+            video[159] = 0x0E; // 0x0E is Bright Yellow on Black
+        }
+
+        // Use 'volatile' in the loop so the compiler doesn't delete the delay
+        for (volatile int i = 0; i < 5000000; i++); 
     }
 }
-
 void kernel_main() {
     clear_screen();
     
@@ -46,7 +53,7 @@ void kernel_main() {
     
     __asm__ __volatile__("sti"); // Start the PIT timer and scheduler
 
-    print("> ");
+    print("nano> ");
 
     while(1) {
         // Task 0: Handle shell
