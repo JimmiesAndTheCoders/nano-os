@@ -104,7 +104,6 @@ isr_common_stub:
     mov gs, ax
     add esp, 8
     popa
-    sti
     iret
 
 irq_common_stub:
@@ -126,5 +125,4 @@ irq_common_stub:
     mov gs, ax
     add esp, 8
     popa
-    sti
     iret

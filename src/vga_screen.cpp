@@ -1,6 +1,6 @@
 #include "vga_screen.hpp"
 
-VgaScreen screen; // Global instance
+VgaScreen screen; 
 
 VgaScreen::VgaScreen() : cursor_x(0), cursor_y(0) {}
 
@@ -8,22 +8,15 @@ void VgaScreen::clear() {
     unsigned char* vidmem = (unsigned char*)VIDEO_ADDRESS;
     for (int i = 0; i < MAX_ROWS * MAX_COLS; i++) {
         vidmem[i * 2] = ' ';
-        vidmem[i * 2 + 1] = 0x0F;
+        vidmem[i * 2 + 1] = 0x0F; 
     }
     set_cursor_offset(0);
 }
 
-// Simple, robust print
 void VgaScreen::print(const char* message) {
-    // Hardware Lock: Stop task switches while we talk to VGA ports
-    __asm__ __volatile__("cli");
-    
     for (int i = 0; message[i] != '\0'; i++) {
         put_char(message[i]);
     }
-
-    // Re-enable interrupts so Task 0 can keep running the shell!
-    __asm__ __volatile__("sti");
 }
 
 void VgaScreen::put_char(char c) {
@@ -37,6 +30,7 @@ void VgaScreen::put_char(char c) {
         if (offset > 0) {
             offset -= 2;
             vidmem[offset] = ' ';
+            vidmem[offset + 1] = 0x0F;
         }
     } else {
         vidmem[offset] = c;
@@ -44,16 +38,20 @@ void VgaScreen::put_char(char c) {
         offset += 2;
     }
 
-    // Scroll if needed
+    // Improved Scrolling
     if (offset >= MAX_ROWS * MAX_COLS * 2) {
         for (int i = 1; i < MAX_ROWS; i++) {
             memory_copy((const char*)(get_offset(0, i) + VIDEO_ADDRESS),
                         (char*)(get_offset(0, i - 1) + VIDEO_ADDRESS),
                         MAX_COLS * 2);
         }
-        char* last_line = (char*)(get_offset(0, MAX_ROWS - 1) + VIDEO_ADDRESS);
-        for (int i = 0; i < MAX_COLS * 2; i++) last_line[i] = 0;
-        offset -= 2 * MAX_COLS;
+        // Wipe the new bottom line
+        unsigned char* last_line = (unsigned char*)(get_offset(0, MAX_ROWS - 1) + VIDEO_ADDRESS);
+        for (int i = 0; i < MAX_COLS; i++) {
+            last_line[i * 2] = ' ';
+            last_line[i * 2 + 1] = 0x0F; 
+        }
+        offset = get_offset(0, MAX_ROWS - 1);
     }
     set_cursor_offset(offset);
 }

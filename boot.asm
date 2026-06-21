@@ -46,17 +46,39 @@ start:
 
 load_kernel_from_disk:
     pusha
-    xor ax, ax
-    mov es, ax
-    mov bx, KERNEL_OFFSET
-    mov ah, 0x02
-    mov al, 17              
-    mov ch, 0x00            
-    mov dh, 0x00            
-    mov cl, 0x02            
+    mov bx, KERNEL_OFFSET   ; Start loading at 0x1000
+    mov cl, 0x02            ; Start at Sector 2
+    mov ch, 0x00            ; Cylinder 0
+    mov dh, 0x00            ; Head 0
     mov dl, [BOOT_DRIVE]
+    
+    mov si, 60              ; Let's load 60 sectors (~30KB)
+.load_loop:
+    push si                 ; Save remaining count
+    
+    mov ah, 0x02            ; BIOS Read Sector
+    mov al, 0x01            ; Read exactly ONE sector
     int 0x13
-    jc disk_error
+    jc disk_error           ; If carry flag is set, something is wrong!
+
+    add bx, 512             ; Move memory pointer forward by one sector
+    inc cl                  ; Next sector
+    cmp cl, 19              ; Did we hit the end of the track (18 sectors)?
+    jne .next_sector
+    
+    mov cl, 0x01            ; Reset to Sector 1
+    inc dh                  ; Next Head
+    cmp dh, 0x02            ; Did we finish Head 0 and Head 1?
+    jne .next_sector
+    
+    mov dh, 0x00            ; Reset to Head 0
+    inc ch                  ; Next Cylinder
+    
+.next_sector:
+    pop si                  ; Restore remaining count
+    dec si
+    jnz .load_loop          ; If si > 0, keep loading
+    
     popa
     ret
 

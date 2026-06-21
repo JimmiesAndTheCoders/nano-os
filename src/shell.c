@@ -8,6 +8,11 @@ void print_prompt() {
 }
 
 void process_command(char *input) {
+    if (strlen(input) == 0) {
+        print_prompt();
+        return;
+    }
+
     if (strcmp(input, "help") == 0) {
         print("Available Commands:\n");
         print("  help         - Display this reference panel.\n");
@@ -21,6 +26,25 @@ void process_command(char *input) {
     else if (strcmp(input, "clear") == 0) {
         clear_screen();
     } 
+    else if (strcmp(input, "ls") == 0) {
+        list_files();
+    } 
+    else if (strcmp(input, "cat ") == 0 || (input[0]=='c' && input[1]=='a' && input[2]=='t')) {
+        if (strlen(input) > 4) {
+            char* filename = input + 4; 
+            char* content = read_file(filename);
+            if (content) {
+                print(content);
+                print("\n");
+            } else {
+                print("Error: File '");
+                print(filename);
+                print("' not found.\n");
+            }
+        } else {
+            print("Usage: cat [filename]\n");
+        }
+    }
     else if (strcmp(input, "status") == 0) {
         print("Nano OS System Status:\n");
         print("  Core state : RUNNING (32-bit Protected Mode)\n");
@@ -41,35 +65,12 @@ void process_command(char *input) {
     else if (strlen(input) == 0) {
         /* User hit enter without typing anything, do nothing */
     }
-    else if (strcmp(input, "ls") == 0) {
-        list_files();
-    } 
-    else if (strcmp(input, "cat ") == 0 || (input[0]=='c' && input[1]=='a' && input[2]=='t')) {
-        // Basic check: if user typed "cat " followed by something
-        if (strlen(input) > 4) {
-            char* filename = input + 4; 
-            char* content = read_file(filename);
-            if (content) {
-                print(content);
-                print("\n");
-            } else {
-                print("Error: File '");
-                print(filename);
-                print("' not found.\n");
-            }
-        } else {
-            print("Usage: cat [filename]\n");
-        }
-    }
     else {
         print("Error: Unknown command '");
         print(input);
         print("'. Type 'help' for instructions.\n");
     }
 
-    /* Print a fresh prompt on a new line */
-    if (strcmp(input, "clear") != 0) {
-        print("\n");
-    }
+    print("\n");
     print_prompt();
 }

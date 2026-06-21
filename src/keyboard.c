@@ -27,11 +27,11 @@ static unsigned int keyboard_callback(registers_t *regs) {
             print("\b");
         }
     } 
-    else if (scancode == 28) {
+    else if (scancode == 28) { 
         print("\n");
         process_command(key_buffer);
         key_buffer[0] = '\0';
-    } 
+    }
     else if (scancode <= 57) {
         char letter = sc_name[scancode];
         if (letter != '?') {

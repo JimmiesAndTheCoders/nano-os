@@ -65,13 +65,7 @@ void init_pmm(unsigned int start_free_mem) {
     unsigned int free_space_size = MEMORY_LIMIT - start_free_mem;
     pmm_free_region(start_free_mem, free_space_size);
 
-    /* Explicitly reserve early low-level system memory regions:
-     * - 0x00000000 to 0x00001000 (IVT and BIOS structures)
-     * - 0x00001000 to 0x00010000 (Kernel code execution space, loaded at 0x1000)
-     * - 0x00090000 to 0x000A0000 (Protected Mode stack and BIOS configuration structures)
-     * - 0x000A0000 to 0x00100000 (Video memory, hardware mapping, BIOS ROM)
-     */
-    pmm_reserve_region(0x0, 0x200000);
+    pmm_reserve_region(0x0, 0x100000);
 }
 
 /* Reserve a specific sequence of bytes (maps to multiple bits) */
