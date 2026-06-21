@@ -6,11 +6,10 @@
 static void *syscalls[4];
 extern void list_files();
 
-void syscall_handler(registers_t *regs) {
-    /* Syscall number is in EAX */
+unsigned int syscall_handler(registers_t *regs) {
     if (regs->eax == SYS_PRINT) {
         char* msg = (char*)regs->ebx;
-        if (msg) print(msg); // Safety check
+        if (msg) print(msg);
     } 
     else if (regs->eax == SYS_READ_FILE) {
         char* name = (char*)regs->ebx;
@@ -22,8 +21,8 @@ void syscall_handler(registers_t *regs) {
     else if (regs->eax == SYS_GET_TICKS) {
         regs->eax = timer_get_ticks();
     }
+    return (unsigned int)regs;
 }
-
 void init_syscalls() {
     register_interrupt_handler(0x80, syscall_handler);
 }

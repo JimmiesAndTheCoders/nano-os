@@ -5,6 +5,7 @@
 
 ASM      = nasm
 CC       = i686-elf-gcc
+CPP      = i686-elf-g++
 LD       = i686-elf-ld
 VBOX     = VBoxManage
 
@@ -24,10 +25,16 @@ TARGET_UUID = d74d67a5-9c49-432e-856f-503a1abae2d8
 
 # Compiler flags: add the include directory
 CFLAGS = -ffreestanding -fno-pie -fno-stack-protector -nostdlib -I$(INC_DIR)
+CPPFLAGS = -ffreestanding -O2 -Wall -Wextra -fno-exceptions -fno-rtti -I$(INC_DIR)
 
-# Find sources
-C_SOURCES = $(wildcard $(SRC_DIR)/*.c)
-C_OBJS    = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(C_SOURCES))
+# Find all C and C++ sources
+C_SOURCES   = $(wildcard $(SRC_DIR)/*.c)
+CPP_SOURCES = $(wildcard $(SRC_DIR)/*.cpp)
+
+# Convert sources to object file paths in build/
+C_OBJS      = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(C_SOURCES))
+CPP_OBJS    = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(CPP_SOURCES))
+ALL_OBJS    = $(C_OBJS) $(CPP_OBJS)
 
 all: $(VDI_IMG)
 
@@ -47,13 +54,16 @@ $(ENTRY_O): $(SRC_DIR)/kernel_entry.asm | $(BUILD_DIR)
 $(INTR_O): $(SRC_DIR)/interrupt.asm | $(BUILD_DIR)
 	$(ASM) -f elf32 $(SRC_DIR)/interrupt.asm -o $(INTR_O)
 
-# C files
+# C and C++ files
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
+    
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
+	$(CPP) $(CPPFLAGS) -c $< -o $@
 
 # Linking
-$(KERN_BIN): $(ENTRY_O) $(INTR_O) $(C_OBJS) linker.ld | $(BUILD_DIR)
-	$(LD) -T linker.ld $(ENTRY_O) $(INTR_O) $(C_OBJS) -o $(KERN_BIN)
+$(KERN_BIN): $(ENTRY_O) $(INTR_O) $(ALL_OBJS) linker.ld | $(BUILD_DIR)
+	$(LD) -T linker.ld $(ENTRY_O) $(INTR_O) $(ALL_OBJS) -o $(KERN_BIN)
 
 # Image creation
 $(RAW_IMG): $(BOOT_BIN) $(KERN_BIN) | $(BUILD_DIR)

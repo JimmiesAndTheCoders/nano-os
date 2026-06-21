@@ -31,15 +31,16 @@ void task_add(void (*entry)(), const char *name) {
     unsigned int stack_mem = (unsigned int)kmalloc(STACK_SIZE);
     unsigned int *stack = (unsigned int *)(stack_mem + STACK_SIZE);
 
-    // --- Ring 0 "Fake" Interrupt Stack ---
+    // 1. The IRET frame
     *(--stack) = 0x0202;           // EFLAGS (Interrupts enabled)
-    *(--stack) = 0x08;             // CS (Kernel Code Segment)
-    *(--stack) = (unsigned int)entry; // EIP (Starting point)
+    *(--stack) = 0x08;             // CS
+    *(--stack) = (unsigned int)entry; // EIP
 
+    // 2. The Error code and Int No (expected by isr_common_stub)
     *(--stack) = 0;                // Error code
-    *(--stack) = 32;               // Interrupt number
+    *(--stack) = 32;               // Int no
 
-    // Pushed by pusha
+    // 3. The PUSHA frame (Order: EAX, ECX, EDX, EBX, ESP, EBP, ESI, EDI)
     *(--stack) = 0; // EAX
     *(--stack) = 0; // ECX
     *(--stack) = 0; // EDX
@@ -49,7 +50,8 @@ void task_add(void (*entry)(), const char *name) {
     *(--stack) = 0; // ESI
     *(--stack) = 0; // EDI
 
-    *(--stack) = 0x10; // DS (Data Segment)
+    // 4. The Data Segment
+    *(--stack) = 0x10; // DS
 
     tasks[task_count].esp = (unsigned int)stack;
     tasks[task_count].active = 1;
@@ -63,16 +65,21 @@ void task_add(void (*entry)(), const char *name) {
 }
 
 // The Scheduler: Called by the timer
-void schedule(registers_t *regs) {
-    if (task_count <= 1) return;
+unsigned int schedule(registers_t *regs) {
+    // If we only have the kernel task, don't switch anything.
+    if (task_count <= 1) {
+        return (unsigned int)regs;
+    }
 
-    // Save current task's stack pointer
+    // Save the stack pointer of the task that just got interrupted
     tasks[current_task].esp = (unsigned int)regs;
 
-    // Switch to next task
-    current_task = (current_task + 1) % task_count;
+    // Pick the next task
+    current_task++;
+    if (current_task >= task_count) {
+        current_task = 0;
+    }
 
-    // Point the registers pointer to the NEW task's stack
-    // The assembly 'mov esp, eax' will then physically jump to this stack
-    *((unsigned int*)&regs) = tasks[current_task].esp;
+    // Return the stack pointer of the NEW task
+    return tasks[current_task].esp;
 }

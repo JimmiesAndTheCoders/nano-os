@@ -9,7 +9,7 @@ This roadmap outlines the planned features and improvements for Nano OS. The pro
 - [X] Implement the Programmable Interval Timer (PIT) to enable system ticks and multitasking.
 - [X] Add preemptive multitasking (context switching) to run multiple "tasks" at once.
 - [X] Implement a simple RAM-based file system (like Initrd) to store and load files.
-- [ ] Create an interface (software interrupts) for user programs to request kernel services.
+- [X] Create an interface (software interrupts) for user programs to request kernel services.
 - [ ] Transition from ring 0 to ring 3 execution to secure the system.
 - [ ] Enable VESA/VBE modes for high-resolution graphics and basic drawing primitives.
 - [ ] Add a test harness for C utility functions to ensure stability.

@@ -129,7 +129,9 @@ unsigned int irq_handler(registers_t *r) {
 
     if (interrupt_handlers[r->int_no] != 0) {
         isr_t handler = interrupt_handlers[r->int_no];
-        handler(r);
+        // Capture the potentially new stack pointer (for task switching)
+        unsigned int new_esp = (unsigned int)handler(r);
+        return new_esp;
     }
-    return (unsigned int)r; // Return the stack pointer
+    return (unsigned int)r;
 }

@@ -71,7 +71,7 @@ void init_pmm(unsigned int start_free_mem) {
      * - 0x00090000 to 0x000A0000 (Protected Mode stack and BIOS configuration structures)
      * - 0x000A0000 to 0x00100000 (Video memory, hardware mapping, BIOS ROM)
      */
-    pmm_reserve_region(0x0, 0x100000);
+    pmm_reserve_region(0x0, 0x200000);
 }
 
 /* Reserve a specific sequence of bytes (maps to multiple bits) */

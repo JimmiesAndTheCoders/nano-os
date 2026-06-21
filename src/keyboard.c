@@ -15,31 +15,26 @@ const char sc_name[] = { '?', '?', '1', '2', '3', '4', '5', '6',
     'h', 'j', 'k', 'l', ';', '\'', '`', '?', '\\', 'z', 'x', 'c', 'v', 
     'b', 'n', 'm', ',', '.', '/', '?', '?', '?', ' '};
 
-static void keyboard_callback(registers_t *regs) {
+static unsigned int keyboard_callback(registers_t *regs) {
     unsigned char scancode = port_byte_in(0x60);
     
-    /* Ignore key releases (scancodes with bit 7 set, i.e., > 0x80) */
-    if (scancode & 0x80) return;
+    if (scancode & 0x80) return (unsigned int)regs; // Return current stack
 
-    /* Handle Backspace (Scancode 14) */
     if (scancode == 14) {
         int len = strlen(key_buffer);
         if (len > 0) {
-            backspace(key_buffer); /* Pop from memory string */
-            print("\b");           /* Graphically remove from screen */
+            backspace(key_buffer);
+            print("\b");
         }
     } 
-    /* Handle Enter (Scancode 28) */
     else if (scancode == 28) {
         print("\n");
-        process_command(key_buffer); /* Hand buffer to the shell parser */
-        key_buffer[0] = '\0';        /* Clear memory buffer */
+        process_command(key_buffer);
+        key_buffer[0] = '\0';
     } 
-    /* Handle alphanumeric characters and general typing space limits */
     else if (scancode <= 57) {
         char letter = sc_name[scancode];
         if (letter != '?') {
-            /* Keep our commands within standard shell length limits */
             if (strlen(key_buffer) < 254) {
                 append(key_buffer, letter);
                 char str[2] = {letter, '\0'};
@@ -47,6 +42,7 @@ static void keyboard_callback(registers_t *regs) {
             }
         }
     }
+    return (unsigned int)regs; // MUST return the stack pointer
 }
 
 void init_keyboard() {

@@ -1,7 +1,7 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-void memory_copy(char *source, char *dest, int no_bytes);
+void memory_copy(const char *source, char *dest, int no_bytes);
 
 /* String Utility Prototypes */
 int strlen(char s[]);

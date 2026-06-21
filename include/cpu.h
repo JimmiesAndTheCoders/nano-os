@@ -28,7 +28,7 @@ typedef struct {
 } registers_t;
 
 /* --- CRITICAL: The definition of isr_t must be here --- */
-typedef void (*isr_t)(registers_t*);
+typedef unsigned int (*isr_t)(registers_t*);
 
 /* Function Prototypes */
 void isr_install();
