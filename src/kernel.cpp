@@ -1,7 +1,7 @@
 #include "vga_screen.hpp"
 
 extern "C" {
-    #include "screen.h"
+    #include "screen.h"  // Use the C interface for guaranteed stability
     #include "cpu.h"
     #include "keyboard.h"
     #include "shell.h"
@@ -12,7 +12,6 @@ extern "C" {
     #include "initrd.h"
     #include "util.h"
     #include "syscall.h"
-
     void call_global_constructors();
 }
 
@@ -28,21 +27,6 @@ void heartbeat_task() {
         }
         for (volatile int i = 0; i < 10000000; i++); 
     }
-}
-
-extern "C" {
-    #include "screen.h"  // Use the C interface for guaranteed stability
-    #include "cpu.h"
-    #include "keyboard.h"
-    #include "shell.h"
-    #include "pmm.h"
-    #include "kmalloc.h"
-    #include "timer.h"
-    #include "task.h"
-    #include "initrd.h"
-    #include "util.h"
-    #include "syscall.h"
-    void call_global_constructors();
 }
 
 extern "C" void kernel_main() {
@@ -63,10 +47,9 @@ extern "C" void kernel_main() {
     // 2. The Visual Reveal (Windows CMD / MS-DOS Style)
     clear_screen(); 
     
-    print("Nano OS [Version 0.1.0]\n");
-    print("(c) 2024 JimmiesAndTheCoders. All rights reserved.\n");
-    print("--------------------------------------------------\n");
-    print("Welcome! Type 'help' to get started.\n\n");
+    print("Nano OS Version 0.1.0\n");
+    print("(c) 2026 JimmiesAndTheCoders. All rights reserved.\n");
+    print("Type 'help' to get started.\n\n");
     
     print_prompt(); // Start the shell prompt
 

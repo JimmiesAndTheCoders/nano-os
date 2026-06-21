@@ -2,7 +2,7 @@
 [bits 16]
 
 ; --- Memory Map Constants ---
-KERNEL_OFFSET   equ 0x1000
+KERNEL_OFFSET   equ 0x10000
 PAGE_DIR_ADDR   equ 0x9000    
 PAGE_TABLE_ADDR equ 0xA000
 PAGE_SIZE       equ 4096
@@ -45,42 +45,24 @@ start:
     jmp CODE_SEG:init_pm
 
 load_kernel_from_disk:
-    pusha
-    mov bx, KERNEL_OFFSET   ; Start loading at 0x1000
-    mov cl, 0x02            ; Start at Sector 2
-    mov ch, 0x00            ; Cylinder 0
-    mov dh, 0x00            ; Head 0
-    mov dl, [BOOT_DRIVE]
-    
-    mov si, 60              ; Let's load 60 sectors (~30KB)
-.load_loop:
-    push si                 ; Save remaining count
-    
-    mov ah, 0x02            ; BIOS Read Sector
-    mov al, 0x01            ; Read exactly ONE sector
-    int 0x13
-    jc disk_error           ; If carry flag is set, something is wrong!
-
-    add bx, 512             ; Move memory pointer forward by one sector
-    inc cl                  ; Next sector
-    cmp cl, 19              ; Did we hit the end of the track (18 sectors)?
-    jne .next_sector
-    
-    mov cl, 0x01            ; Reset to Sector 1
-    inc dh                  ; Next Head
-    cmp dh, 0x02            ; Did we finish Head 0 and Head 1?
-    jne .next_sector
-    
-    mov dh, 0x00            ; Reset to Head 0
-    inc ch                  ; Next Cylinder
-    
-.next_sector:
-    pop si                  ; Restore remaining count
-    dec si
-    jnz .load_loop          ; If si > 0, keep loading
-    
-    popa
+    mov ah, 0x42                    ; BIOS Extended Read (LBA support)
+    mov dl, [BOOT_DRIVE]            ; The drive QEMU booted from
+    mov si, disk_address_packet     ; Load our Disk Address Packet (DAP)
+    int 0x13                        ; Call BIOS disk interrupt
+    jc disk_error                   ; If carry flag is set, error!
     ret
+
+; ------------------------------------------------------------------
+; Disk Address Packet (DAP) for LBA reads
+; ------------------------------------------------------------------
+align 4
+disk_address_packet:
+    db 0x10                         ; Size of DAP (always 16 bytes)
+    db 0                            ; Reserved (always 0)
+    dw 100                          ; Number of sectors to read (~50KB)
+    dw 0x0000                       ; Target offset (0x0000)
+    dw 0x1000                       ; Target segment (0x1000) -> 0x10000 physical
+    dq 1                            ; Start LBA (Sector 1 = kernel start)
 
 disk_error:
     mov si, error_msg
