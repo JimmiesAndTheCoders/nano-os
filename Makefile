@@ -57,9 +57,12 @@ $(KERN_BIN): $(ENTRY_O) $(INTR_O) $(C_OBJS) linker.ld | $(BUILD_DIR)
 
 # Image creation
 $(RAW_IMG): $(BOOT_BIN) $(KERN_BIN) | $(BUILD_DIR)
-	cat $(BOOT_BIN) $(KERN_BIN) > $(BUILD_DIR)/nano_os_raw.bin
+	# Merge bootloader and kernel
+	cat $(BOOT_BIN) $(KERN_BIN) > $(BUILD_DIR)/full_kernel.bin
+	# Create a blank 1.44MB floppy image
 	dd if=/dev/zero of=$(RAW_IMG) bs=512 count=2880
-	dd if=$(BUILD_DIR)/nano_os_raw.bin of=$(RAW_IMG) conv=notrunc
+	# Put our kernel into the image
+	dd if=$(BUILD_DIR)/full_kernel.bin of=$(RAW_IMG) conv=notrunc
 
 # VDI Deployment
 $(VDI_IMG): $(RAW_IMG)

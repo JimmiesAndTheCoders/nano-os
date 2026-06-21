@@ -1,22 +1,14 @@
-; ==============================================================================
-; NANO OS - Interrupt Routing Stubs
-; Description: Catches CPU hardware interrupts, saves the CPU state, calls our
-;              C handlers, and restores the CPU state gracefully.
-; ==============================================================================
-
 [bits 32]
 [extern isr_handler]
 [extern irq_handler]
 
-; ------------------------------------------------------------------------------
-; ISRs (Interrupt Service Routines) - Reserved for CPU Exceptions (0-31)
-; ------------------------------------------------------------------------------
+; --- CLEAN MACROS (No duplicates) ---
 %macro ISR_NOERRCODE 1
 global isr%1
 isr%1:
     cli
-    push byte 0     ; Push dummy error code to keep stack uniform
-    push byte %1    ; Push interrupt number
+    push dword 0      ; Push dummy error code
+    push dword %1     ; Push interrupt number
     jmp isr_common_stub
 %endmacro
 
@@ -24,10 +16,20 @@ isr%1:
 global isr%1
 isr%1:
     cli
-    push byte %1    ; Push interrupt number (error code is already pushed by CPU)
+    push dword %1     ; CPU already pushed error code, we push int number
     jmp isr_common_stub
 %endmacro
 
+%macro IRQ 2
+global irq%1
+irq%1:
+    cli
+    push dword 0
+    push dword %2
+    jmp irq_common_stub
+%endmacro
+
+; --- ISR Definitions (0-31) ---
 ISR_NOERRCODE 0
 ISR_NOERRCODE 1
 ISR_NOERRCODE 2
@@ -61,44 +63,12 @@ ISR_NOERRCODE 29
 ISR_NOERRCODE 30
 ISR_NOERRCODE 31
 
-isr_common_stub:
-    pusha               ; Pushes edi, esi, ebp, esp, ebx, edx, ecx, eax
-    mov ax, ds          ; Lower 16-bits of eax = ds.
-    push eax            ; Save the data segment descriptor
-    mov ax, 0x10        ; Load the kernel data segment descriptor
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    
-    push esp            ; Push a pointer to our registers_t struct for C
-    call isr_handler    ; Route to our C handler!
-    add esp, 4          ; Clean up the pushed esp pointer
-    
-    pop eax             ; Reload the original data segment descriptor
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    add esp, 8          ; Cleans up the pushed error code and pushed ISR number
-    popa                ; Pops edi, esi, ebp... etc
-    sti
-    iret                ; Pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP
+; --- Syscall Definition (128) ---
+ISR_NOERRCODE 128    ; <--- This is our Software Interrupt
 
-; ------------------------------------------------------------------------------
-; IRQs (Interrupt Requests) - Reserved for Hardware Devices (32-47)
-; ------------------------------------------------------------------------------
-%macro IRQ 2
-global irq%1
-irq%1:
-    cli
-    push byte 0         ; Dummy error code
-    push byte %2        ; Push mapped interrupt number
-    jmp irq_common_stub
-%endmacro
-
-IRQ 0, 32   ; Programmable Interval Timer (PIT)
-IRQ 1, 33   ; Keyboard
+; --- IRQ Definitions (32-47) ---
+IRQ 0, 32
+IRQ 1, 33
 IRQ 2, 34
 IRQ 3, 35
 IRQ 4, 36
@@ -114,6 +84,29 @@ IRQ 13, 45
 IRQ 14, 46
 IRQ 15, 47
 
+; --- Common Stubs ---
+isr_common_stub:
+    pusha
+    mov ax, ds
+    push eax
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    push esp
+    call isr_handler
+    mov esp, eax
+    pop eax
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    add esp, 8
+    popa
+    sti
+    iret
+
 irq_common_stub:
     pusha
     mov ax, ds
@@ -123,18 +116,15 @@ irq_common_stub:
     mov es, ax
     mov fs, ax
     mov gs, ax
-    
-    push esp            ; Push current stack pointer (registers_t*)
-    call irq_handler    ; Returns new stack pointer in EAX
-    ; --- FIX: We don't 'add esp, 4' here because we want to switch to EAX ---
-    mov esp, eax        ; Switch to the new stack (could be the same one or a new task)
-    
-    pop eax             ; Restore DS
+    push esp
+    call irq_handler
+    mov esp, eax
+    pop eax
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
-    add esp, 8          ; Skip int_no and err_code
+    add esp, 8
     popa
     sti
     iret

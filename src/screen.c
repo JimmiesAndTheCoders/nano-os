@@ -10,8 +10,9 @@ int get_offset(int col, int row);
 int get_offset_row(int offset);
 int get_offset_col(int offset);
 
-/* Print a message at the current cursor position */
 void print(char *message) {
+    // If we are in a task and interrupts are ALREADY off, don't touch them
+    // For now, let's just make the printing simple and fast
     print_at(message, -1, -1);
 }
 
@@ -107,10 +108,12 @@ int print_char(char c, int col, int row, char attr) {
 }
 
 int get_cursor_offset() {
+    __asm__ __volatile__("cli"); // LOCK
     port_byte_out(REG_SCREEN_CTRL, 14);
     int offset = port_byte_in(REG_SCREEN_DATA) << 8;
     port_byte_out(REG_SCREEN_CTRL, 15);
     offset += port_byte_in(REG_SCREEN_DATA);
+    __asm__ __volatile__("sti"); // UNLOCK
     return offset * 2;
 }
 
