@@ -2,7 +2,9 @@
 
 This roadmap outlines the planned features and improvements for Nano OS. The project is in active development, and we welcome contributions from the community. Below are the key milestones and features we aim to implement in the coming months.
 
-[**COMPLETED**] Phase 1 (MS-DOS like hobby OS):
+<details>
+<summary><b>[COMPLETED] Phase 1 (MS-DOS like hobby OS)</b></summary>
+
 - [X] Initialize the bootloader and setup the kernel.
 - [X] Implement a bitmap-based memory allocator to track free/used frames.
 - [X] Enable virtual memory to support isolation between kernel and user space.
@@ -17,12 +19,24 @@ This roadmap outlines the planned features and improvements for Nano OS. The pro
 - [X] Expand technical docs for driver API and memory architecture.
 - [X] Clean up build system to support Linux, macOS, and Windows host build environments equally.
 
+</details>
+
+<br>
+
 Phase 2 (Fully GUI operating system): 
-- [ ] Implement a simple graphical user interface (GUI) with mouse support.
-- [ ] Add networking support (e.g., Ethernet driver, TCP/IP stack) to enable internet connectivity.
-- [ ] Add support for loading and running user-space applications.
-- [ ] Implement a basic shell with command history and scripting capabilities.
-- [ ] Add support for additional hardware devices (e.g., disk drives, network cards).
-- [ ] Optimize the kernel for performance and stability.
+- [ ] Implement a PS/2 mouse driver with interrupt-driven (IRQ 12) coordinate tracking.
+- [ ] Create a basic Window Manager (compositing, overlapping windows, dragging, and resizing).
+- [ ] Develop a standard GUI Toolkit (buttons, text boxes, dialogs, and sliders).
+- [ ] Implement an ATA/IDE PIO disk driver for persistent read/write storage.
+- [ ] Introduce a full file system (e.g., FAT32 or ext2) to replace the read-only initrd.
+- [ ] Add an ELF binary parser to dynamically load and execute user-space applications from disk.
+- [ ] Implement Inter-Process Communication (IPC) (e.g., message passing, shared memory, pipes).
+- [ ] Add a PCI bus enumerator to detect and configure connected hardware devices dynamically.
+- [ ] Implement a Real-Time Clock (RTC) driver for accurate system time and date tracking.
+- [ ] Develop a GUI terminal emulator to upgrade the existing Nano Shell with history and scripting.
+- [ ] Add basic networking support (e.g., RTL8139 Ethernet driver, custom TCP/IP stack) for connectivity.
+- [ ] Add support for sound hardware (e.g., AC97, Intel HDA, or SoundBlaster 16).
+- [ ] Add support for additional hardware devices (e.g., USB controllers, SATA drives).
+- [ ] Optimize the kernel and VESA/VBE drawing algorithms for hardware performance and stability.
 
 This roadmap is subject to change as the project evolves, but it provides a clear direction for the development of Nano OS. We encourage contributors to pick any of the open tasks and help us bring Nano OS to life!
