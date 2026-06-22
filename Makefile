@@ -14,6 +14,7 @@ HOST_CC  = gcc
 BUILD_DIR = build
 SRC_DIR   = src
 INC_DIR   = include
+TEST_DIR  = tests
 
 # Output filenames
 BOOT_BIN = $(BUILD_DIR)/boot.bin
@@ -24,9 +25,13 @@ RAW_IMG  = $(BUILD_DIR)/nano_os.img
 VDI_IMG  = nano_os.vdi
 TARGET_UUID = d74d67a5-9c49-432e-856f-503a1abae2d8
 
+# Test binary
+TEST_BIN = $(BUILD_DIR)/test_util
+
 # Compiler flags: add the include directory
 CFLAGS = -ffreestanding -fno-pie -fno-stack-protector -nostdlib -I$(INC_DIR)
 CPPFLAGS = -ffreestanding -O2 -Wall -Wextra -fno-exceptions -fno-rtti -I$(INC_DIR)
+HOST_CFLAGS = -I$(INC_DIR) -Wall -Wextra -g -fno-builtin
 
 # Find all C and C++ sources
 C_SOURCES   = $(wildcard $(SRC_DIR)/*.c)
@@ -91,7 +96,14 @@ $(VDI_IMG): $(RAW_IMG)
 	$(VBOX) convertfromraw $(RAW_IMG) $(VDI_IMG) --format VDI
 	$(VBOX) internalcommands sethduuid $(VDI_IMG) $(TARGET_UUID)
 
+# Host Test Harness
+test: $(TEST_DIR)/test_util.c $(SRC_DIR)/util.c | $(BUILD_DIR)
+	$(HOST_CC) $(HOST_CFLAGS) $(TEST_DIR)/test_util.c $(SRC_DIR)/util.c -o $(TEST_BIN)
+	@echo "\n=== Running Unit Tests ==="
+	@./$(TEST_BIN)
+
 clean:
 	rm -rf $(BUILD_DIR)
+	rm -f $(VDI_IMG)
 
-.PHONY: all clean
+.PHONY: all clean test

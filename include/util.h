@@ -4,9 +4,9 @@
 void memory_copy(const char *source, char *dest, int no_bytes);
 
 /* String Utility Prototypes */
-int strlen(char s[]);
+int strlen(const char *s);
 void append(char s[], char n);
 void backspace(char s[]);
-int strcmp(char s1[], char s2[]);
+int strcmp(const char *s1, const char *s2);
 
 #endif
