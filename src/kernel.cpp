@@ -13,42 +13,45 @@ extern "C" {
     #include "util.h"
     #include "syscall.h"
     #include "nanolib.h"
-    #include "gdt.h" // <-- NEW
+    #include "gdt.h" 
+    #include "graphics.h"
+    #include "vbe.h"
     
     void call_global_constructors();
 }
 
-void heartbeat_task() { /* Unchanged */
-    volatile char *video = (char*)0xb8000;
-    int offset = (25 * 80 * 2) - 2; 
+void heartbeat_task() { 
+    vbe_mode_info_t* vbe = (vbe_mode_info_t*)0x5000;
+    static int toggle = 0;
     while(1) {
-        if (video[offset] == '*') video[offset] = ' ';
-        else { video[offset] = '*'; video[offset+1] = 0x0E; }
+        if (vbe->width > 0) {
+            // Draw a blinking box in the bottom right corner for GUI mode!
+            fill_rect(vbe->width - 20, vbe->height - 20, 10, 10, toggle ? 0x00FF00 : 0x000000);
+        } else {
+            // Fallback for Text Mode!
+            volatile char *video = (char*)0xb8000;
+            int offset = (25 * 80 * 2) - 2; 
+            if (video[offset] == '*') video[offset] = ' ';
+            else { video[offset] = '*'; video[offset+1] = 0x0E; }
+        }
+        toggle = !toggle;
         for (volatile int i = 0; i < 10000000; i++); 
     }
 }
 
-void background_worker_task() { /* Unchanged */
+void background_worker_task() {
     while(1) { __asm__ __volatile__("nop"); }
 }
 
-// --- NEW: A true User-mode application ---
 void user_mode_task() {
-    // Wait a brief moment for the CLI to be drawn before asserting presence
     for (volatile int i = 0; i < 50000000; i++); 
-    
-    // Test our Syscall via an int 0x80 gate - this is the ONLY way we can talk 
-    // to the hardware from Ring 3 without crashing!
     nano_print((char*)"\n[User Task] Executing safely in Ring 3 user-space!\nnano> ");
-    
-    while(1) {
-        // Idling in User Mode without `hlt` privilege!
-    }
+    while(1) {}
 }
 
 extern "C" void kernel_main() {
     call_global_constructors();
-    init_gdt();      // <-- NEW: Inject GDT and Ring 3 Segments first!
+    init_gdt();      
     isr_install();
     irq_install();
     
@@ -63,9 +66,17 @@ extern "C" void kernel_main() {
 
     task_add(heartbeat_task, "heartbeat"); 
     task_add(background_worker_task, "worker1");
-    task_add_user(user_mode_task, "user_task1"); // <-- NEW: Spawn our user program!
+    task_add_user(user_mode_task, "user_task1"); 
 
     clear_screen(); 
+
+    vbe_mode_info_t* vbe = (vbe_mode_info_t*)0x5000;
+    if (vbe->width > 0) {
+        // Draw a decorative color gradient across the top of the GUI
+        for (int i = 0; i < vbe->width; i++) {
+            draw_line(i, 0, i, 5, (i % 255) << 16 | (255 - (i % 255)) << 8 | 255);
+        }
+    }
     
     print("============================================================\n");
     print(" Nano OS Kernel Initialization & System Check\n");
@@ -78,8 +89,7 @@ extern "C" void kernel_main() {
     print("[OK] Bitmap-based Physical Memory Allocator verified\n");
 
     print("[OK] Virtual Memory (Paging) enabled and mapping isolated\n");
-    
-    print("[OK] Global Descriptor Table (GDT) and TSS reloaded\n"); // <-- NEW
+    print("[OK] Global Descriptor Table (GDT) and TSS reloaded\n"); 
 
     char* heap_test = (char*)kmalloc(16);
     if (heap_test) {
@@ -89,8 +99,14 @@ extern "C" void kernel_main() {
 
     print("[OK] Preemptive Multitasking active (3 tasks queued)\n");
     print("[OK] RAM-based File System (Initrd) mounted at 0x300000\n");
+    print("[OK] User-space Software Interrupts (Syscalls) ready\n");
     
-    nano_print((char*)"[OK] User-space Software Interrupts (Syscalls) ready\n");
+    if (vbe->width > 0) {
+        print("[OK] VESA VBE High-Resolution GUI Enabled!\n");
+    } else {
+        print("[OK] Standard VGA Text Console Fallback mapped!\n");
+    }
+
     print("\n============================================================\n\n");
 
     print("Nano OS Version 0.1.0\n");

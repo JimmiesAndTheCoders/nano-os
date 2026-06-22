@@ -6,6 +6,7 @@ KERNEL_OFFSET   equ 0x10000
 PAGE_DIR_ADDR   equ 0x9000    
 PAGE_TABLE_ADDR equ 0xA000
 PAGE_SIZE       equ 4096
+VBE_INFO_ADDR   equ 0x5000    ; Store VBE Mode Info here for the kernel
 
 start:
     ; 1. Setup Segments & Stack
@@ -36,6 +37,20 @@ start:
     call print_string
     call load_kernel_from_disk
 
+    ; --- NEW: VESA VBE Setup ---
+    ; Query VBE Mode Info for Mode 0x115 (800x600x24/32) with Linear Framebuffer (0x4000)
+    mov ax, 0x4F01
+    mov cx, 0x4115
+    mov di, VBE_INFO_ADDR
+    int 0x10
+    cmp ax, 0x004F
+    jne .skip_vesa            ; If VBE unsupported, stay in text mode!
+
+    mov ax, 0x4F02            ; Set VBE Mode
+    mov bx, 0x4115
+    int 0x10
+
+.skip_vesa:
     ; 5. Transition to Protected Mode
     cli
     lgdt [gdt_descriptor]
@@ -45,38 +60,34 @@ start:
     jmp CODE_SEG:init_pm
 
 load_kernel_from_disk:
-    mov ah, 0x42                    ; BIOS Extended Read
-    mov dl, [BOOT_DRIVE]            ; The drive QEMU booted from
-    mov si, disk_address_packet     ; Load Kernel Disk Address Packet
-    int 0x13                        ; Call BIOS disk interrupt
-    jc disk_error                   ; If carry flag is set, error!
+    mov ah, 0x42                    
+    mov dl, [BOOT_DRIVE]            
+    mov si, disk_address_packet     
+    int 0x13                        
+    jc disk_error                   
     
-    ; --- NEW: Load the Initrd File System ---
     mov ah, 0x42
     mov dl, [BOOT_DRIVE]
-    mov si, initrd_packet           ; Load Initrd Disk Address Packet
+    mov si, initrd_packet           
     int 0x13
     jc disk_error
     
     ret
 
-; ------------------------------------------------------------------
-; Disk Address Packets (DAP) for LBA reads
-; ------------------------------------------------------------------
 align 4
 disk_address_packet:
-    db 0x10                         ; Size of DAP (always 16 bytes)
-    db 0                            ; Reserved
-    dw 100                          ; Read 100 sectors (Kernel)
-    dw 0x0000, 0x1000               ; Target offset 0x0000, segment 0x1000 -> 0x10000
-    dq 1                            ; Start LBA (Sector 1)
+    db 0x10                         
+    db 0                            
+    dw 100                          
+    dw 0x0000, 0x1000               
+    dq 1                            
 
 initrd_packet:
-    db 0x10                         ; Size of DAP
-    db 0                            ; Reserved
-    dw 50                           ; Read 50 sectors (Initrd Max Size: 25KB)
-    dw 0x0000, 0x3000               ; Target offset 0x0000, segment 0x3000 -> 0x30000
-    dq 101                          ; Start LBA (Sector 101, right after kernel!)
+    db 0x10                         
+    db 0                            
+    dw 50                           
+    dw 0x0000, 0x3000               
+    dq 101                          
 
 disk_error:
     mov si, error_msg
@@ -97,20 +108,18 @@ print_string:
     popa
     ret
 
-; ==============================================================================
-; Global Descriptor Table (GDT) - FIXED SYNTAX
-; ==============================================================================
+; Global Descriptor Table (GDT)
 gdt_start:
 gdt_null:
     dd 0x0
     dd 0x0
 gdt_code:
-    dw 0xffff    ; Limit (bits 0-15)
-    dw 0x0       ; Base (bits 0-15)
-    db 0x0       ; Base (bits 16-23)
-    db 10011010b ; 1st flags, type flags
-    db 11001111b ; 2nd flags, Limit (bits 16-19)
-    db 0x0       ; Base (bits 24-31)
+    dw 0xffff
+    dw 0x0
+    db 0x0
+    db 10011010b
+    db 11001111b
+    db 0x0
 gdt_data:
     dw 0xffff
     dw 0x0
@@ -142,9 +151,8 @@ init_pm:
     jmp KERNEL_OFFSET
 
 setup_paging:
-    ; Clear memory for paging structures
     mov edi, PAGE_DIR_ADDR
-    mov ecx, 2048 ; Clear Dir and one Table
+    mov ecx, 2048
     xor eax, eax
     rep stosd
 
@@ -152,7 +160,7 @@ setup_paging:
     mov edi, PAGE_TABLE_ADDR
     mov ecx, 1024
     xor eax, eax
-    mov ebx, 7 ; <-- CHANGED: 7 = Present (1) + R/W (2) + User Access (4)
+    mov ebx, 7 
 .loop:
     mov edx, eax
     or edx, ebx
@@ -161,11 +169,33 @@ setup_paging:
     add eax, 4096
     loop .loop
 
-    ; Link Dir to Table
     mov eax, PAGE_TABLE_ADDR
-    or eax, 7 ; <-- CHANGED: Link with User Access
+    or eax, 7 
     mov [PAGE_DIR_ADDR], eax
 
+    ; --- NEW: Map VBE Linear Framebuffer using Page Size Extension (PSE) ---
+    mov eax, cr4
+    or eax, 0x00000010         ; Enable PSE (Bit 4)
+    mov cr4, eax
+
+    mov eax, [VBE_INFO_ADDR + 40] ; Read Framebuffer Physical Base Address
+    test eax, eax
+    jz .done_paging            ; If no LFB, skip mapping
+
+    mov edx, eax
+    and edx, 0xFFC00000        ; Align to 4MB boundary
+    or edx, 0x00000087         ; Present + R/W + User + 4MB Page Size Flag (Bit 7)
+
+    mov ebx, eax
+    shr ebx, 22                ; Calculate Page Directory Index
+    shl ebx, 2
+    add ebx, PAGE_DIR_ADDR
+
+    mov [ebx], edx             ; Map first 4MB of video memory
+    add edx, 0x400000
+    mov [ebx+4], edx           ; Map second 4MB of video memory (just in case!)
+
+.done_paging:
     mov eax, PAGE_DIR_ADDR
     mov cr3, eax
     mov eax, cr0

@@ -1,15 +1,29 @@
 #include "vga_screen.hpp"
+#include "vbe.h"
+#include "graphics.h"
+#include "font8x8.h"
+
+extern "C" {
+    #include "util.h"
+    #include "ports.h"
+}
 
 VgaScreen screen; 
 
 VgaScreen::VgaScreen() : cursor_x(0), cursor_y(0) {}
 
 void VgaScreen::clear() {
-    unsigned char* vidmem = (unsigned char*)VIDEO_ADDRESS;
-    for (int i = 0; i < MAX_ROWS * MAX_COLS; i++) {
-        vidmem[i * 2] = ' ';
-        vidmem[i * 2 + 1] = 0x0F; 
+    if (vbe_info->width > 0) {
+        fill_rect(0, 0, vbe_info->width, vbe_info->height, 0x000000); // Black background
+    } else {
+        unsigned char* vidmem = (unsigned char*)VIDEO_ADDRESS;
+        for (int i = 0; i < MAX_ROWS * MAX_COLS; i++) {
+            vidmem[i * 2] = ' ';
+            vidmem[i * 2 + 1] = 0x0F; 
+        }
     }
+    cursor_x = 0;
+    cursor_y = 0;
     set_cursor_offset(0);
 }
 
@@ -19,7 +33,63 @@ void VgaScreen::print(const char* message) {
     }
 }
 
+// Private helper to draw an upscaled font glyph to the GUI
+static void draw_glyph(int px_x, int px_y, char c, unsigned int color) {
+    if (c < 32 || c > 126) return;
+    const unsigned char* glyph = font8x8[c - 32];
+    for (int row = 0; row < 8; row++) {
+        for (int col = 0; col < 8; col++) {
+            // FIX: Read bits from left (MSB) to right (LSB) by subtracting from 7!
+            if (glyph[row] & (1 << (7 - col))) {
+                // Scale x2 for better readability on high-res monitors
+                put_pixel(px_x + col*2, px_y + row*2, color);
+                put_pixel(px_x + col*2 + 1, px_y + row*2, color);
+                put_pixel(px_x + col*2, px_y + row*2 + 1, color);
+                put_pixel(px_x + col*2 + 1, px_y + row*2 + 1, color);
+            }
+        }
+    }
+}
+
 void VgaScreen::put_char(char c) {
+    if (vbe_info->width > 0) {
+        // --- GUI Mode (Pixels) ---
+        int max_cols = vbe_info->width / 16;
+        int max_rows = vbe_info->height / 16;
+
+        if (c == '\n') {
+            cursor_x = 0;
+            cursor_y++;
+        } else if (c == '\b') {
+            if (cursor_x > 0) {
+                cursor_x--;
+                fill_rect(cursor_x * 16, cursor_y * 16, 16, 16, 0x000000);
+            }
+        } else {
+            draw_glyph(cursor_x * 16, cursor_y * 16, c, 0xFFFFFF); // White Text
+            cursor_x++;
+            if (cursor_x >= max_cols) {
+                cursor_x = 0;
+                cursor_y++;
+            }
+        }
+
+        // Extremely basic graphical scrolling
+        if (cursor_y >= max_rows) {
+            int byte_size = vbe_info->height * vbe_info->pitch;
+            int row_size = 16 * vbe_info->pitch; // Scroll 1 line (16 px)
+            
+            memory_copy((const char*)(vbe_info->framebuffer + row_size), 
+                        (char*)(vbe_info->framebuffer), 
+                        byte_size - row_size);
+            
+            fill_rect(0, (max_rows - 1) * 16, vbe_info->width, 16, 0x000000);
+            cursor_y--;
+        }
+        return;
+    }
+
+    // --- VGA Text Mode Fallback ---
     unsigned char* vidmem = (unsigned char*)VIDEO_ADDRESS;
     int offset = get_cursor_offset();
 
@@ -38,14 +108,12 @@ void VgaScreen::put_char(char c) {
         offset += 2;
     }
 
-    // Improved Scrolling
     if (offset >= MAX_ROWS * MAX_COLS * 2) {
         for (int i = 1; i < MAX_ROWS; i++) {
             memory_copy((const char*)(get_offset(0, i) + VIDEO_ADDRESS),
                         (char*)(get_offset(0, i - 1) + VIDEO_ADDRESS),
                         MAX_COLS * 2);
         }
-        // Wipe the new bottom line
         unsigned char* last_line = (unsigned char*)(get_offset(0, MAX_ROWS - 1) + VIDEO_ADDRESS);
         for (int i = 0; i < MAX_COLS; i++) {
             last_line[i * 2] = ' ';
@@ -57,6 +125,7 @@ void VgaScreen::put_char(char c) {
 }
 
 int VgaScreen::get_cursor_offset() {
+    if (vbe_info->width > 0) return 0; // Hardware cursor doesn't exist in VBE
     port_byte_out(0x3d4, 14);
     int offset = port_byte_in(0x3d5) << 8;
     port_byte_out(0x3d4, 15);
@@ -65,6 +134,7 @@ int VgaScreen::get_cursor_offset() {
 }
 
 void VgaScreen::set_cursor_offset(int offset) {
+    if (vbe_info->width > 0) return; // Hardware cursor doesn't exist in VBE
     offset /= 2;
     port_byte_out(0x3d4, 14);
     port_byte_out(0x3d5, (unsigned char)(offset >> 8));
@@ -73,7 +143,12 @@ void VgaScreen::set_cursor_offset(int offset) {
 }
 
 void VgaScreen::set_cursor(int col, int row) {
-    set_cursor_offset(get_offset(col, row));
+    if (vbe_info->width > 0) {
+        cursor_x = col;
+        cursor_y = row;
+    } else {
+        set_cursor_offset(get_offset(col, row));
+    }
 }
 
 extern "C" {

@@ -11,7 +11,7 @@ This roadmap outlines the planned features and improvements for Nano OS. The pro
 - [X] Implement a simple RAM-based file system (like Initrd) to store and load files.
 - [X] Create an interface (software interrupts) for user programs to request kernel services.
 - [X] Transition from ring 0 to ring 3 execution to secure the system.
-- [ ] Enable VESA/VBE modes for high-resolution graphics and basic drawing primitives.
+- [X] Enable VESA/VBE modes for high-resolution graphics and basic drawing primitives.
 - [ ] Add a test harness for C utility functions to ensure stability.
 - [ ] Expand technical docs for driver API and memory architecture.
 - [ ] Clean up build system to support Linux, macOS, and Windows host build environments equally.
