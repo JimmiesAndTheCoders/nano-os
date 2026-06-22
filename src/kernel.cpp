@@ -13,109 +13,94 @@ extern "C" {
     #include "util.h"
     #include "syscall.h"
     #include "nanolib.h"
+    #include "gdt.h" // <-- NEW
     
     void call_global_constructors();
 }
 
-void heartbeat_task() {
+void heartbeat_task() { /* Unchanged */
     volatile char *video = (char*)0xb8000;
     int offset = (25 * 80 * 2) - 2; 
     while(1) {
-        if (video[offset] == '*') {
-            video[offset] = ' ';
-        } else {
-            video[offset] = '*';
-            video[offset+1] = 0x0E;
-        }
+        if (video[offset] == '*') video[offset] = ' ';
+        else { video[offset] = '*'; video[offset+1] = 0x0E; }
         for (volatile int i = 0; i < 10000000; i++); 
     }
 }
 
-void background_worker_task() {
+void background_worker_task() { /* Unchanged */
+    while(1) { __asm__ __volatile__("nop"); }
+}
+
+// --- NEW: A true User-mode application ---
+void user_mode_task() {
+    // Wait a brief moment for the CLI to be drawn before asserting presence
+    for (volatile int i = 0; i < 50000000; i++); 
+    
+    // Test our Syscall via an int 0x80 gate - this is the ONLY way we can talk 
+    // to the hardware from Ring 3 without crashing!
+    nano_print((char*)"\n[User Task] Executing safely in Ring 3 user-space!\nnano> ");
+    
     while(1) {
-        __asm__ __volatile__("nop");
+        // Idling in User Mode without `hlt` privilege!
     }
 }
 
 extern "C" void kernel_main() {
-    // ====================================================================
-    // 1. Silent Core Hardware & Memory Initialization
-    // ====================================================================
     call_global_constructors();
+    init_gdt();      // <-- NEW: Inject GDT and Ring 3 Segments first!
     isr_install();
     irq_install();
     
     init_pmm(0x100000);              
     kmalloc_init(0x200000, 0x80000); 
     pmm_reserve_region(0x300000, 0x20000); 
-    
-    // --> CHANGED: Initialize RAM-disk at 0x30000 (where boot.asm placed it)
     init_initrd(0x30000);           
-    
     init_syscalls();                 
     init_timer(100);
-    init_tasking();                  // Initialize Context Switcher
-    init_keyboard();                 // Initialize PS/2 Keyboard
+    init_tasking();                  
+    init_keyboard();                 
 
-    // Add tasks to the scheduler queue
     task_add(heartbeat_task, "heartbeat"); 
     task_add(background_worker_task, "worker1");
+    task_add_user(user_mode_task, "user_task1"); // <-- NEW: Spawn our user program!
 
-    // ====================================================================
-    // 2. Boot Sequence / Roadmap Feature Demonstration
-    // ====================================================================
     clear_screen(); 
     
     print("============================================================\n");
     print(" Nano OS Kernel Initialization & System Check\n");
     print("============================================================\n\n");
     
-    // Feature: Bootloader & Kernel
     print("[OK] Bootloader transitioned to 32-bit Protected Mode\n");
 
-    // Feature: Bitmap-based Memory Allocator
     void* p_block = pmm_alloc_block();
     pmm_free_block(p_block);
     print("[OK] Bitmap-based Physical Memory Allocator verified\n");
 
-    // Feature: Virtual Memory
-    // (Paging tables were enabled in boot.asm before jumping to the C kernel)
     print("[OK] Virtual Memory (Paging) enabled and mapping isolated\n");
+    
+    print("[OK] Global Descriptor Table (GDT) and TSS reloaded\n"); // <-- NEW
 
-    // Feature: kmalloc / kfree
     char* heap_test = (char*)kmalloc(16);
     if (heap_test) {
         kfree(heap_test);
         print("[OK] Kernel dynamic memory (kmalloc/kfree) operational\n");
     }
 
-    // Feature: PIT and Preemptive Multitasking
-    print("[OK] Programmable Interval Timer (PIT) configured at 100Hz\n");
     print("[OK] Preemptive Multitasking active (3 tasks queued)\n");
-
-    // Feature: Initrd RAM disk
     print("[OK] RAM-based File System (Initrd) mounted at 0x300000\n");
-
-    // Feature: Software Interrupts
-    // Use the Syscall API to trigger an interrupt handler (Int 0x80)
+    
     nano_print((char*)"[OK] User-space Software Interrupts (Syscalls) ready\n");
-
     print("\n============================================================\n\n");
 
-    // ====================================================================
-    // 3. User Interface / Shell Hand-off
-    // ====================================================================
     print("Nano OS Version 0.1.0\n");
     print("(c) 2026 JimmiesAndTheCoders. All rights reserved.\n");
     print("Type 'help' to get started.\n\n");
     
     print_prompt();
 
-    // Final Step: Enable interrupts! 
-    // This immediately starts the hardware timer for multitasking and enables keyboard
     __asm__ __volatile__("sti");
 
-    // Idle thread: Puts CPU to sleep until the next interrupt
     while(1) {
         __asm__ __volatile__("hlt");
     }

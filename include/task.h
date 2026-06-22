@@ -5,7 +5,7 @@
 
 void init_tasking();
 void task_add(void (*entry)(), const char *name);
-// Ensure this returns unsigned int
+void task_add_user(void (*entry)(), const char *name); // <-- NEW
 unsigned int schedule(registers_t *regs);
 
 #endif

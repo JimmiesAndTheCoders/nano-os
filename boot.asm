@@ -152,7 +152,7 @@ setup_paging:
     mov edi, PAGE_TABLE_ADDR
     mov ecx, 1024
     xor eax, eax
-    mov ebx, 3 ; Present + R/W
+    mov ebx, 7 ; <-- CHANGED: 7 = Present (1) + R/W (2) + User Access (4)
 .loop:
     mov edx, eax
     or edx, ebx
@@ -163,7 +163,7 @@ setup_paging:
 
     ; Link Dir to Table
     mov eax, PAGE_TABLE_ADDR
-    or eax, 3
+    or eax, 7 ; <-- CHANGED: Link with User Access
     mov [PAGE_DIR_ADDR], eax
 
     mov eax, PAGE_DIR_ADDR
