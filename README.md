@@ -131,6 +131,14 @@ Once booted, interact with the system using the following commands:
 
 > Note: We'll be adding more commands in the future, so stay tuned!
 
+## Documentation
+
+For detailed technical specifications of the operating system internals, please refer to the following documentation files:
+
+**[Memory Architecture](docs/memory_architecture.md)**: Information regarding the physical memory map, page sizes, and heap management.
+
+**[Driver API](docs/driver_api.md)**: Hardware interaction references for VGA, VESA graphics, timer, and keyboard sub-systems.
+
 ## Roadmap
 
 Check out the [Roadmap](ROADMAP.md) for upcoming features and improvements.

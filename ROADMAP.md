@@ -13,7 +13,7 @@ This roadmap outlines the planned features and improvements for Nano OS. The pro
 - [X] Transition from ring 0 to ring 3 execution to secure the system.
 - [X] Enable VESA/VBE modes for high-resolution graphics and basic drawing primitives.
 - [X] Add a test harness for C utility functions to ensure stability.
-- [ ] Expand technical docs for driver API and memory architecture.
+- [X] Expand technical docs for driver API and memory architecture.
 - [ ] Clean up build system to support Linux, macOS, and Windows host build environments equally.
 - [ ] Implement a simple graphical user interface (GUI) with mouse support.
 - [ ] Add networking support (e.g., Ethernet driver, TCP/IP stack) to enable internet connectivity.
