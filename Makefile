@@ -8,6 +8,7 @@ CC       = i686-elf-gcc
 CPP      = i686-elf-g++
 LD       = i686-elf-ld
 VBOX     = VBoxManage
+HOST_CC  = gcc
 
 # Directories
 BUILD_DIR = build
@@ -61,16 +62,27 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
 	$(CPP) $(CPPFLAGS) -c $< -o $@
 
+# Tool build
+build/make_initrd: tools/make_initrd.c | $(BUILD_DIR)
+	@mkdir -p tools
+	$(HOST_CC) tools/make_initrd.c -o build/make_initrd
+
+# Generate the file system image
+build/initrd.img: build/make_initrd
+	@echo "Nano OS Initrd File System Successfully Mounted!" > build/test.txt
+	@echo "All systems operating within normal parameters." > build/status.txt
+	build/make_initrd build/initrd.img build/test.txt build/status.txt
+
 # Linking
 $(KERN_BIN): $(ENTRY_O) $(INTR_O) $(ALL_OBJS) linker.ld | $(BUILD_DIR)
 	$(LD) -T linker.ld $(ENTRY_O) $(INTR_O) $(ALL_OBJS) -o $(KERN_BIN)
 
 # Image creation
-$(RAW_IMG): $(BOOT_BIN) $(KERN_BIN) | $(BUILD_DIR)
+$(RAW_IMG): $(BOOT_BIN) $(KERN_BIN) build/initrd.img | $(BUILD_DIR)
 	cat $(BOOT_BIN) $(KERN_BIN) > $(BUILD_DIR)/full_kernel.bin
-	# Increase to a full 1.44MB floppy count
 	dd if=/dev/zero of=$(RAW_IMG) bs=512 count=2880
 	dd if=$(BUILD_DIR)/full_kernel.bin of=$(RAW_IMG) conv=notrunc
+	dd if=build/initrd.img of=$(RAW_IMG) obs=512 seek=101 conv=notrunc
 
 # VDI Deployment
 $(VDI_IMG): $(RAW_IMG)

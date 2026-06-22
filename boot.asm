@@ -45,24 +45,38 @@ start:
     jmp CODE_SEG:init_pm
 
 load_kernel_from_disk:
-    mov ah, 0x42                    ; BIOS Extended Read (LBA support)
+    mov ah, 0x42                    ; BIOS Extended Read
     mov dl, [BOOT_DRIVE]            ; The drive QEMU booted from
-    mov si, disk_address_packet     ; Load our Disk Address Packet (DAP)
+    mov si, disk_address_packet     ; Load Kernel Disk Address Packet
     int 0x13                        ; Call BIOS disk interrupt
     jc disk_error                   ; If carry flag is set, error!
+    
+    ; --- NEW: Load the Initrd File System ---
+    mov ah, 0x42
+    mov dl, [BOOT_DRIVE]
+    mov si, initrd_packet           ; Load Initrd Disk Address Packet
+    int 0x13
+    jc disk_error
+    
     ret
 
 ; ------------------------------------------------------------------
-; Disk Address Packet (DAP) for LBA reads
+; Disk Address Packets (DAP) for LBA reads
 ; ------------------------------------------------------------------
 align 4
 disk_address_packet:
     db 0x10                         ; Size of DAP (always 16 bytes)
-    db 0                            ; Reserved (always 0)
-    dw 100                          ; Number of sectors to read (~50KB)
-    dw 0x0000                       ; Target offset (0x0000)
-    dw 0x1000                       ; Target segment (0x1000) -> 0x10000 physical
-    dq 1                            ; Start LBA (Sector 1 = kernel start)
+    db 0                            ; Reserved
+    dw 100                          ; Read 100 sectors (Kernel)
+    dw 0x0000, 0x1000               ; Target offset 0x0000, segment 0x1000 -> 0x10000
+    dq 1                            ; Start LBA (Sector 1)
+
+initrd_packet:
+    db 0x10                         ; Size of DAP
+    db 0                            ; Reserved
+    dw 50                           ; Read 50 sectors (Initrd Max Size: 25KB)
+    dw 0x0000, 0x3000               ; Target offset 0x0000, segment 0x3000 -> 0x30000
+    dq 101                          ; Start LBA (Sector 101, right after kernel!)
 
 disk_error:
     mov si, error_msg
