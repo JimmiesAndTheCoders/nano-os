@@ -2,6 +2,7 @@
 
 This roadmap outlines the planned features and improvements for Nano OS. The project is in active development, and we welcome contributions from the community. Below are the key milestones and features we aim to implement in the coming months.
 
+[**COMPLETED**] Phase 1 (MS-DOS like hobby OS):
 - [X] Initialize the bootloader and setup the kernel.
 - [X] Implement a bitmap-based memory allocator to track free/used frames.
 - [X] Enable virtual memory to support isolation between kernel and user space.
@@ -14,7 +15,9 @@ This roadmap outlines the planned features and improvements for Nano OS. The pro
 - [X] Enable VESA/VBE modes for high-resolution graphics and basic drawing primitives.
 - [X] Add a test harness for C utility functions to ensure stability.
 - [X] Expand technical docs for driver API and memory architecture.
-- [ ] Clean up build system to support Linux, macOS, and Windows host build environments equally.
+- [X] Clean up build system to support Linux, macOS, and Windows host build environments equally.
+
+Phase 2 (Fully GUI operating system): 
 - [ ] Implement a simple graphical user interface (GUI) with mouse support.
 - [ ] Add networking support (e.g., Ethernet driver, TCP/IP stack) to enable internet connectivity.
 - [ ] Add support for loading and running user-space applications.
