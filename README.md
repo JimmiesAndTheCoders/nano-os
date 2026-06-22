@@ -1,5 +1,7 @@
 # Nano OS
 
+![NOS Screenchot](docs/screenshot.png)
+
 Nano OS is a lightweight, 32-bit hobby operating system developed from scratch (well, not from scratch, it was made with AI or something like that). It features a custom bootloader, a protected-mode C kernel, VGA hardware drivers, interrupt management, and an interactive command-line shell.
 
 ## Key Features

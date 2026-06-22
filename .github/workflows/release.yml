@@ -1,0 +1,33 @@
+name: Release Nano OS
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger on any tag starting with 'v'
+
+permissions:
+  contents: write # Required for creating releases
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Build Nano OS
+        run: |
+          # Assuming you have a standard Makefile
+          make
+          # Ensure your build process creates nano_os.img
+          # If it creates it in a specific folder, adjust this path:
+          ls -lh nano_os.img
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: |
+            nano_os.img
+          draft: false
+          prerelease: false
+          generate_release_notes: true
