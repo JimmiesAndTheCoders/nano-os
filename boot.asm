@@ -44,21 +44,24 @@ start:
     mov ecx, 64
     rep stosd
 
-    ; Query VBE Mode Info for Mode 0x115 (800x600x24/32) with Linear Framebuffer (0x4000)
+    ; Query VBE Mode Info for Mode 0x115 (800x600x24/32)
     mov ax, 0x4F01
-    mov cx, 0x4115
+    mov cx, 0x0115            ; FIX: Query raw mode without LFB flag (Bit 14)
     mov di, VBE_INFO_ADDR
     int 0x10
     cmp ax, 0x004F
     jne .skip_vesa            ; If query unsupported, stay in text mode
 
     mov ax, 0x4F02            ; Set VBE Mode
-    mov bx, 0x4115
+    mov bx, 0x4115            ; Keep LFB bit set here for actual mode initialization
     int 0x10
     cmp ax, 0x004F
     je .skip_vesa_clear       ; If successful, bypass text fallback
 
 .skip_vesa:
+    ; FIX: Cleanly restore VGA text mode 3 to prevent black-screen hangs on fallback
+    mov ax, 0x0003
+    int 0x10
     ; Force clear resolution parameters to safely enforce VGA text mode fallback
     mov word [VBE_INFO_ADDR + 18], 0
 
@@ -90,7 +93,7 @@ align 4
 disk_address_packet:
     db 0x10                         
     db 0                            
-    dw 100                          
+    dw 250                         
     dw 0x0000, 0x1000               
     dq 1                            
 
@@ -99,7 +102,7 @@ initrd_packet:
     db 0                            
     dw 50                           
     dw 0x0000, 0x3000               
-    dq 101                          
+    dq 301                          
 
 disk_error:
     mov si, error_msg

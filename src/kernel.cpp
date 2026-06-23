@@ -54,6 +54,12 @@ void user_mode_task() {
 }
 
 extern "C" void kernel_main() {
+    extern char _sbss;
+    extern char _ebss;
+    for (char* p = &_sbss; p < &_ebss; p++) {
+        *p = 0;
+    }
+    
     call_global_constructors();
     init_gdt();      
     isr_install();
