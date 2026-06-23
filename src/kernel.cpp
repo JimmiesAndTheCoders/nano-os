@@ -28,10 +28,8 @@ void heartbeat_task() {
     static int toggle = 0;
     while(1) {
         if (vbe->width > 0) {
-            // Draw a blinking box in the bottom right corner for GUI mode!
             fill_rect(vbe->width - 20, vbe->height - 20, 10, 10, toggle ? 0x00FF00 : 0x000000);
         } else {
-            // Fallback for Text Mode!
             volatile char *video = (char*)0xb8000;
             int offset = (25 * 80 * 2) - 2; 
             if (video[offset] == '*') video[offset] = ' ';
@@ -63,12 +61,13 @@ extern "C" void kernel_main() {
     pmm_reserve_region(0x300000, 0x20000); 
     init_initrd(0x30000);           
     init_syscalls();                 
-    init_timer(100);
+    init_timer(100);                 // Start legacy PIT initially
     init_tasking();                  
     init_keyboard();
     init_mouse();
     init_pci();
     init_lapic();
+    init_apic_timer(100);            // Upgrade system timer tick to Local APIC Timer
 
     task_add(heartbeat_task, "heartbeat"); 
     task_add(background_worker_task, "worker1");
@@ -78,7 +77,6 @@ extern "C" void kernel_main() {
 
     vbe_mode_info_t* vbe = (vbe_mode_info_t*)0x5000;
     if (vbe->width > 0) {
-        // Draw a decorative color gradient across the top of the GUI
         for (int i = 0; i < vbe->width; i++) {
             draw_line(i, 0, i, 5, (i % 255) << 16 | (255 - (i % 255)) << 8 | 255);
         }
@@ -103,13 +101,18 @@ extern "C" void kernel_main() {
         print("[OK] Kernel dynamic memory (kmalloc/kfree) operational\n");
     }
 
+    if (apic_timer_active()) {
+        print("[OK] Local APIC Timer calibrated and configured at 100 Hz\n");
+    } else {
+        print("[OK] Legacy PIT Timer operational (APIC Calibration fallback)\n");
+    }
+
     print("[OK] Preemptive Multitasking active (3 tasks queued)\n");
     print("[OK] RAM-based File System (Initrd) mounted at 0x300000\n");
     print("[OK] User-space Software Interrupts (Syscalls) ready\n");
     print("[OK] PCI Bus Enumerator successfully initialized\n");
     print("[OK] Local APIC mapped and configured for MSI transport\n");
     
-    // Read the accurate system time on startup
     rtc_time_t boot_time;
     rtc_get_time(&boot_time);
     print("[OK] Real-Time Clock (RTC) initialized. System Time: ");

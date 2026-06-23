@@ -53,6 +53,13 @@ Added feature:
 Added feature:
 - A Real-Time Clock (RTC) / CMOS driver for accurate system time tracking.
 
+## Version 1.6.0
+
+Added feature:
+- Upgraded legacy system timer to a dynamically calibrated Local APIC (LAPIC) Timer.
+- Masked legacy PIC PIT line to reduce bus interrupts.
+- Implemented robust fallback logic to the PIT in cases where LAPIC initialization or calibration fails.
+
 <br>
 
 Nano OS is now built using an automated pipeline via GitHub Actions.
