@@ -127,6 +127,13 @@ unsigned int irq_handler(registers_t *r) {
     if (r->int_no >= 40) port_byte_out(0xA0, 0x20); 
     port_byte_out(0x20, 0x20);  
 
+    // Safely write EOI to Local APIC if it has been mapped in the page table directory
+    unsigned int* pd = (unsigned int*)0x9000;
+    if (pd[0xFEE00000 >> 22] & 1) {
+        volatile unsigned int* lapic_eoi = (volatile unsigned int*)0xFEE000B0;
+        *lapic_eoi = 0;
+    }
+
     if (interrupt_handlers[r->int_no] != 0) {
         isr_t handler = interrupt_handlers[r->int_no];
         // Capture the potentially new stack pointer (for task switching)

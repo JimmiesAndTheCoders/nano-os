@@ -63,3 +63,13 @@ The PCI driver (`pci.c`) implements standard PCI bus scanning by communicating w
 - `const char* pci_class_to_string(unsigned char class_code)`: Translates a PCI class code to a readable string.
 - `unsigned int pci_read_dword(unsigned char bus, unsigned char slot, unsigned char func, unsigned char offset)`: Reads a 32-bit register from the config space of the specified address.
 - `void pci_write_dword(unsigned char bus, unsigned char slot, unsigned char func, unsigned char offset, unsigned int data)`: Writes a 32-bit register to the config space of the specified address.
+
+### 6.1. MSI & MSI-X (Message Signaled Interrupts)
+Devices supporting MSI or MSI-X can trigger interrupts by issuing direct memory writes to `0xFEE00000` (delivery register) containing specific payload vectors rather than driving physical IRQ pins.
+
+- `void init_lapic()`: Activates the local APIC on the processor to intercept and route message signaled interrupts.
+- `unsigned char pci_find_capability(bus, slot, func, cap_id)`: Searches the capabilities linked list of the specified PCI device for standard IDs (e.g., `0x05` for MSI, `0x11` for MSI-X).
+- `int pci_enable_msi(pci_device_t* dev, unsigned char vector)`: Directs the selected device to issue its interrupts targeting the mapped Local APIC vector address space.
+- `int pci_disable_msi(pci_device_t* dev)`: Disables the device's MSI transmission mechanism.
+- `int pci_enable_msix(pci_device_t* dev, unsigned char vector, unsigned int index)`: Discovers MMIO table offsets, links the target vector to the dynamic BAR memory map, and triggers the configured interrupt payload.
+- `int pci_disable_msix(pci_device_t* dev)`: Disables the device's MSI-X state parameters.

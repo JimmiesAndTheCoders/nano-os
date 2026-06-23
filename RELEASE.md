@@ -40,6 +40,14 @@ Added feature:
 Added command:
 - `pci`
 
+## Version 1.4.0
+
+Added feature:
+- Support for MSI and MSI-X (Message Signaled Interrupts) in the PCI driver.
+- Mapping capabilities to resolve BAR spaces via 4MB page structures (PSE).
+- Setup of Local APIC MSR registers to trap signaled vectors.
+- Interactive terminal subcommands enabling control of MSI modes.
+
 <br>
 
 Nano OS is now built using an automated pipeline via GitHub Actions.

@@ -67,6 +67,7 @@ extern "C" void kernel_main() {
     init_keyboard();
     init_mouse();
     init_pci();
+    init_lapic();
 
     task_add(heartbeat_task, "heartbeat"); 
     task_add(background_worker_task, "worker1");
@@ -105,6 +106,7 @@ extern "C" void kernel_main() {
     print("[OK] RAM-based File System (Initrd) mounted at 0x300000\n");
     print("[OK] User-space Software Interrupts (Syscalls) ready\n");
     print("[OK] PCI Bus Enumerator successfully initialized\n");
+    print("[OK] Local APIC mapped and configured for MSI transport\n");
     
     if (vbe->width > 0) {
         print("[OK] VESA VBE High-Resolution GUI Enabled!\n");

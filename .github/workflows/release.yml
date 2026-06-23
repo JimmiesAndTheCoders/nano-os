@@ -15,22 +15,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      - name: Install NASM
-        run: sudo apt-get update && sudo apt-get install -y nasm
-
-      - name: Build Nano OS
+      - name: Install Build Dependencies
         run: |
-          # Assuming you have a standard Makefile
-          make
-          # Ensure your build process creates nano_os.img
-          # If it creates it in a specific folder, adjust this path:
+          sudo apt-get update
+          sudo apt-get install -y nasm gcc-multilib g++-multilib
+
+      - name: Build Nano OS Raw Image
+        run: |
+          # Build target raw image directly, bypassing VBoxManage.
+          # Override CC, CPP, and LD to compile via multilib i386 mode on the host.
+          make build/nano_os.img CC="gcc -m32" CPP="g++ -m32" LD="ld -melf_i386"
+          
+          # Verify the image output
           ls -lh build/nano_os.img
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
           files: |
-            nano_os.img
+            build/nano_os.img
           draft: false
           prerelease: false
           generate_release_notes: true

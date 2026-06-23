@@ -105,6 +105,7 @@ static void draw_editor_interface() {
     clear_screen();
     print("--------------------------------------------------------------------------------\n");
     print("  CNODE TERMINAL EDITOR v1.0   |   Editing File: ");
+    print("\n");
     print(editing_filename);
     print("\n");
     print("  [ESC]: Save & Exit           |   [F2]: Discard & Quit\n");
@@ -189,6 +190,10 @@ void process_command(char *input) {
         print("  mkdir [dir]  - Create a directory on RAM disk.\n");
         print("  cnode [file] - Run the terminal text/code editor.\n");
         print("  pci          - List all detected PCI bus devices.\n");
+        print("  pci msi-enable [index] [vector]  - Enable MSI on specified device.\n");
+        print("  pci msi-disable [index]          - Disable MSI on specified device.\n");
+        print("  pci msix-enable [index] [vector] - Enable MSI-X on specified device.\n");
+        print("  pci msix-disable [index]         - Disable MSI-X on specified device.\n");
         print("  status       - Inspect system operational metrics.\n");
         print("  nano --status- Execute system mascot configuration check.\n");
         print("  halt         - Safely power down the hardware processor.\n");
@@ -369,7 +374,7 @@ void process_command(char *input) {
     }
     else if (strcmp(input, "pci") == 0) {
         print("PCI Bus Device Enumeration:\n");
-        print("Bus:Slot.Func  Vendor   Device   Class Description\n");
+        print("Idx Bus:Slot.Func  Vendor   Device   Class Description\n");
         print("--------------------------------------------------------------------------------\n");
         int count = pci_get_device_count();
         if (count == 0) {
@@ -379,15 +384,18 @@ void process_command(char *input) {
                 pci_device_t* dev = pci_get_device(i);
                 
                 char bus_str[16], slot_str[16], func_str[16];
-                char vend_str[16], dev_str[16];
+                char vend_str[16], dev_str[16], idx_str[16];
                 
+                itoa(i, idx_str);
                 itoa(dev->bus, bus_str);
                 itoa(dev->slot, slot_str);
                 itoa(dev->func, func_str);
                 hex_to_string(dev->vendor_id, vend_str, 4);
                 hex_to_string(dev->device_id, dev_str, 4);
                 
-                print(" ");
+                print("[");
+                print(idx_str);
+                print("] ");
                 print(bus_str);
                 print(":");
                 print(slot_str);
@@ -400,7 +408,138 @@ void process_command(char *input) {
                 print(dev_str);
                 print("   ");
                 print(pci_class_to_string(dev->class_code));
+                
+                if (dev->msi_supported) {
+                    print(" [MSI");
+                    if (dev->msi_enabled) {
+                        char vec_str[16];
+                        itoa(dev->msi_vector, vec_str);
+                        print(":v=");
+                        print(vec_str);
+                    }
+                    print("]");
+                }
+                if (dev->msix_supported) {
+                    print(" [MSI-X");
+                    if (dev->msix_enabled) {
+                        char vec_str[16];
+                        itoa(dev->msix_vector, vec_str);
+                        print(":v=");
+                        print(vec_str);
+                    }
+                    print("]");
+                }
                 print("\n");
+            }
+        }
+    }
+    else if (strncmp_local(input, "pci msi-enable ", 15) == 0) {
+        char* args = input + 15;
+        int idx = 0, vec = 0, i = 0;
+        while (args[i] >= '0' && args[i] <= '9') {
+            idx = idx * 10 + (args[i] - '0');
+            i++;
+        }
+        if (args[i] == ' ') {
+            i++;
+            while (args[i] >= '0' && args[i] <= '9') {
+                vec = vec * 10 + (args[i] - '0');
+                i++;
+            }
+            pci_device_t* dev = pci_get_device(idx);
+            if (!dev) {
+                print("Error: Invalid device index.\n");
+            } else {
+                if (pci_enable_msi(dev, vec)) {
+                    print("MSI enabled successfully on device ");
+                    char idx_str[16], vec_str[16];
+                    itoa(idx, idx_str); itoa(vec, vec_str);
+                    print(idx_str);
+                    print(" with vector ");
+                    print(vec_str);
+                    print("\n");
+                } else {
+                    print("Error: MSI configuration failed or unsupported.\n");
+                }
+            }
+        } else {
+            print("Usage: pci msi-enable [device_index] [vector]\n");
+        }
+    }
+    else if (strncmp_local(input, "pci msi-disable ", 16) == 0) {
+        char* args = input + 16;
+        int idx = 0, i = 0;
+        while (args[i] >= '0' && args[i] <= '9') {
+            idx = idx * 10 + (args[i] - '0');
+            i++;
+        }
+        pci_device_t* dev = pci_get_device(idx);
+        if (!dev) {
+            print("Error: Invalid device index.\n");
+        } else {
+            if (pci_disable_msi(dev)) {
+                print("MSI disabled on device ");
+                char idx_str[16];
+                itoa(idx, idx_str);
+                print(idx_str);
+                print("\n");
+            } else {
+                print("Error: MSI disable failed or unsupported.\n");
+            }
+        }
+    }
+    else if (strncmp_local(input, "pci msix-enable ", 16) == 0) {
+        char* args = input + 16;
+        int idx = 0, vec = 0, i = 0;
+        while (args[i] >= '0' && args[i] <= '9') {
+            idx = idx * 10 + (args[i] - '0');
+            i++;
+        }
+        if (args[i] == ' ') {
+            i++;
+            while (args[i] >= '0' && args[i] <= '9') {
+                vec = vec * 10 + (args[i] - '0');
+                i++;
+            }
+            pci_device_t* dev = pci_get_device(idx);
+            if (!dev) {
+                print("Error: Invalid device index.\n");
+            } else {
+                if (pci_enable_msix(dev, vec, 0)) {
+                    print("MSI-X enabled successfully on device ");
+                    char idx_str[16], vec_str[16];
+                    itoa(idx, idx_str); itoa(vec, vec_str);
+                    print(idx_str);
+                    print(" with vector ");
+                    print(vec_str);
+                    print("\n");
+                } else {
+                    print("Error: MSI-X configuration failed or unsupported.\n");
+                }
+            }
+        } else {
+            print("Usage: pci msix-enable [device_index] [vector]\n");
+        }
+    }
+    else if (strncmp_local(input, "pci msix-disable ", 17) == 0) {
+        char* args = input + 17;
+        int idx = 0, i = 0;
+        while (args[i] >= '0' && args[i] <= '9') {
+            idx = idx * 10 + (args[i] - '0');
+            i++;
+        }
+        pci_device_t* dev = pci_get_device(idx);
+        if (!dev) {
+            print("Error: Invalid device index.\n");
+        } else {
+            if (pci_disable_msix(dev)) {
+                print("MSI-X disabled on device ");
+                char idx_str[16];
+                itoa(idx, idx_str);
+                print(idx_str);
+                print("\n");
+            } else {
+                print("Error: MSI-X disable failed or unsupported.\n");
             }
         }
     }

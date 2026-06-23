@@ -26,7 +26,7 @@ This roadmap outlines the planned features and improvements for Nano OS. The pro
 Phase 2: Core Subsystems & Persistent Storage
 
 - [X] Add a PCI bus enumerator to detect, parse configuration spaces, and configure hardware.
-- [ ] Add support for MSI/MSI-X (Message Signaled Interrupts) in the PCI driver.
+- [X] Add support for MSI/MSI-X (Message Signaled Interrupts) in the PCI driver.
 - [ ] Implement a Real-Time Clock (RTC) / CMOS driver for accurate system time tracking.
 - [ ] Upgrade timer support to the High Precision Event Timer (HPET) or APIC timer.
 - [ ] Implement an ATA/IDE PIO disk driver for basic read/write storage.

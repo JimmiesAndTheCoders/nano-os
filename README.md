@@ -135,6 +135,10 @@ Once booted, interact with the system using the following commands:
 - `mkdir [dir]`: Create a directory on RAM disk.
 - `cnode [file]`: Run the terminal text/code editor.
 - `pci`: List all detected PCI bus devices.
+    - `msi-enable [index] [vector]`: Enable MSI on specified device.
+    - `msi-disable [index]`: Disable MSI on specified device.
+    - `msix-enable [index] [vector]`: Enable MSI on specified device.
+    - `msi-disable [index]`: Disable MSI on specified device.
 - `status`: Displays kernel operational metrics.
 - `nano --status`: View system mascot information.
 - `halt`: Safely stops the CPU.
