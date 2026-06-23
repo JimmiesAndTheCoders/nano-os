@@ -25,15 +25,29 @@ jobs:
           # Build target raw image directly, bypassing VBoxManage.
           # Override CC, CPP, and LD to compile via multilib i386 mode on the host.
           make build/nano_os.img CC="gcc -m32" CPP="g++ -m32" LD="ld -melf_i386"
-          
+
           # Verify the image output
           ls -lh build/nano_os.img
+
+      - name: Set version output from tag
+        id: set-version
+        run: |
+          # GITHUB_REF is like refs/tags/v1.2.3 — strip the refs/tags/ prefix to get the tag name
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+        # no need for shell quoting; this step writes the version to $GITHUB_OUTPUT
+
+      - name: Append tag version to image filename
+        run: |
+          echo "Renaming image to include version: ${{ steps.set-version.outputs.version }}"
+          mv build/nano_os.img build/nano_os-${{ steps.set-version.outputs.version }}.img
+          ls -lh build
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
           files: |
-            build/nano_os.img
+            build/nano_os-${{ steps.set-version.outputs.version }}.img
           draft: false
           prerelease: false
           generate_release_notes: true
