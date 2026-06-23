@@ -3,6 +3,7 @@
 #include "util.h"
 #include "initrd.h"
 #include "mouse.h"
+#include "pci.h"
 
 static char current_dir[64] = "/";
 
@@ -87,6 +88,16 @@ static void get_parent_directory(const char* path, char* dest) {
             return;
         }
     }
+}
+
+static void hex_to_string(unsigned int val, char* dest, int width) {
+    static const char hex_chars[] = "0123456789ABCDEF";
+    dest[0] = '0';
+    dest[1] = 'x';
+    for (int i = 0; i < width; i++) {
+        dest[width + 1 - i] = hex_chars[(val >> (i * 4)) & 0x0F];
+    }
+    dest[width + 2] = '\0';
 }
 
 /* Redraws the terminal editor screen cleanly */
@@ -177,6 +188,7 @@ void process_command(char *input) {
         print("  touch [file] - Create an empty file on RAM disk.\n");
         print("  mkdir [dir]  - Create a directory on RAM disk.\n");
         print("  cnode [file] - Run the terminal text/code editor.\n");
+        print("  pci          - List all detected PCI bus devices.\n");
         print("  status       - Inspect system operational metrics.\n");
         print("  nano --status- Execute system mascot configuration check.\n");
         print("  halt         - Safely power down the hardware processor.\n");
@@ -354,6 +366,43 @@ void process_command(char *input) {
         
         draw_editor_interface();
         return; // Retain current execution status without dropping prompt until saved
+    }
+    else if (strcmp(input, "pci") == 0) {
+        print("PCI Bus Device Enumeration:\n");
+        print("Bus:Slot.Func  Vendor   Device   Class Description\n");
+        print("--------------------------------------------------------------------------------\n");
+        int count = pci_get_device_count();
+        if (count == 0) {
+            print("  No PCI devices detected.\n");
+        } else {
+            for (int i = 0; i < count; i++) {
+                pci_device_t* dev = pci_get_device(i);
+                
+                char bus_str[16], slot_str[16], func_str[16];
+                char vend_str[16], dev_str[16];
+                
+                itoa(dev->bus, bus_str);
+                itoa(dev->slot, slot_str);
+                itoa(dev->func, func_str);
+                hex_to_string(dev->vendor_id, vend_str, 4);
+                hex_to_string(dev->device_id, dev_str, 4);
+                
+                print(" ");
+                print(bus_str);
+                print(":");
+                print(slot_str);
+                print(".");
+                print(func_str);
+                
+                print("       ");
+                print(vend_str);
+                print("   ");
+                print(dev_str);
+                print("   ");
+                print(pci_class_to_string(dev->class_code));
+                print("\n");
+            }
+        }
     }
     else if (strcmp(input, "status") == 0) {
         print("Nano OS System Status:\n");

@@ -7,8 +7,12 @@ x86 hardware peripherals are largely controlled via CPU I/O ports. Nano OS uses 
 
 - `unsigned char port_byte_in(unsigned short port)`: Reads an 8-bit value from a specific I/O port.
 - `void port_byte_out(unsigned short port, unsigned char data)`: Writes an 8-bit value to a specific I/O port.
+- `unsigned short port_word_in(unsigned short port)`: Reads a 16-bit value from a specific I/O port.
+- `void port_word_out(unsigned short port, unsigned short data)`: Writes a 16-bit value to a specific I/O port.
+- `unsigned int port_dword_in(unsigned short port)`: Reads a 32-bit value from a specific I/O port.
+- `void port_dword_out(unsigned short port, unsigned int data)`: Writes a 32-bit value to a specific I/O port.
 
-*Example Usage:* Communicating with the Programmable Interrupt Controller (PIC) or VGA cursor registers.
+*Example Usage:* Communicating with the Programmable Interrupt Controller (PIC), VGA cursor registers, or PCI configuration space address and data ports.
 
 ## 2. Graphics & Screen Drivers
 
@@ -49,3 +53,13 @@ Nano OS exposes a safe API to user-space applications (Ring 3) through Software 
 - `SYS_GET_TICKS` (3): Returns system uptime in timer ticks.
 
 *Note: User applications can utilize the wrapper library in `nanolib.h` to execute these interrupts cleanly.*
+
+## 6. PCI Bus Enumerator
+The PCI driver (`pci.c`) implements standard PCI bus scanning by communicating with the CPU's PCI configuration space ports (`0xCF8` and `0xCFC`).
+
+- `void init_pci()`: Scans the PCI buses, slots, and functions, populating an internal registry of detected devices.
+- `int pci_get_device_count()`: Returns the total number of detected PCI devices.
+- `pci_device_t* pci_get_device(int index)`: Returns a pointer to a specific device entry in the database.
+- `const char* pci_class_to_string(unsigned char class_code)`: Translates a PCI class code to a readable string.
+- `unsigned int pci_read_dword(unsigned char bus, unsigned char slot, unsigned char func, unsigned char offset)`: Reads a 32-bit register from the config space of the specified address.
+- `void pci_write_dword(unsigned char bus, unsigned char slot, unsigned char func, unsigned char offset, unsigned int data)`: Writes a 32-bit register to the config space of the specified address.

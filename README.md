@@ -134,6 +134,7 @@ Once booted, interact with the system using the following commands:
 - `touch [file]`: Create an empty file on RAM disk.
 - `mkdir [dir]`: Create a directory on RAM disk.
 - `cnode [file]`: Run the terminal text/code editor.
+- `pci`: List all detected PCI bus devices.
 - `status`: Displays kernel operational metrics.
 - `nano --status`: View system mascot information.
 - `halt`: Safely stops the CPU.

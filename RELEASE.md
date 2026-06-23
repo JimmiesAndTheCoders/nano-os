@@ -36,4 +36,12 @@ Added commands:
 - `mkdir [dir]`
 - `cnode [file]`
 
+## Version 1.3.0
+
+Added feature:
+- A PCI bus enumerator to detect, parse configuration spaces, and configure hardware
+
+Added command:
+- `pci`
+
 Every tagged release (v*) will manually produce a nano_os-[VERSION].img file, available in the "Releases" section of the repository.
