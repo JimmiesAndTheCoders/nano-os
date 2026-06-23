@@ -1,3 +1,157 @@
+#include "initrd.h"
+#include "vfs.h"
+#include "util.h"
+#include "kmalloc.h"
+#include "screen.h"
+
+static unsigned int root_address = 0;
+static initrd_header_t* header = 0;
+
+static int strncmp_local(const char *s1, const char *s2, int n) {
+    for (int i = 0; i < n; i++) {
+        if (s1[i] != s2[i]) {
+            return (unsigned char)s1[i] - (unsigned char)s2[i];
+        }
+        if (s1[i] == '\0') {
+            return 0;
+        }
+    }
+    return 0;
+}
+
+static void strncpy(char* dest, const char* src, int n) {
+    int i;
+    for (i = 0; i < n && src[i] != '\0'; i++) {
+        dest[i] = src[i];
+    }
+    for (; i < n; i++) {
+        dest[i] = '\0';
+    }
+}
+
+static int is_direct_child(const char* parent, const char* child) {
+    int parent_len = strlen(parent);
+    if (strncmp_local(parent, child, parent_len) != 0) {
+        return 0;
+    }
+    
+    const char* sub = child + parent_len;
+    if (parent_len > 0 && parent[parent_len - 1] == '/') {
+        // Parent already ends in '/'
+    } else {
+        if (*sub == '/') {
+            sub++;
+        } else {
+            return 0;
+        }
+    }
+    
+    while (*sub != '\0') {
+        if (*sub == '/') return 0;
+        sub++;
+    }
+    return 1;
+}
+
+void init_initrd(unsigned int location) {
+    root_address = location;
+    header = (initrd_header_t*)location;
+}
+
+void list_files(const char* current_dir) {
+    (void)current_dir;
+    if (!header) return;
+    for (unsigned int i = 0; i < header->nfiles; i++) {
+        print("  ");
+        print(header->files[i].name);
+        print("\n");
+    }
+}
+
+char* read_file(const char* name) {
+    if (!header) return 0;
+    
+    const char* norm_name = name;
+    if (name[0] == '/') norm_name++;
+    
+    for (unsigned int i = 0; i < header->nfiles; i++) {
+        const char* f_name = header->files[i].name;
+        if (f_name[0] == '/') f_name++;
+        
+        if (strcmp(f_name, norm_name) == 0) {
+            return (char*)(root_address + header->files[i].offset);
+        }
+    }
+    return 0;
+}
+
+int create_file(const char* name, unsigned int is_dir) {
+    if (!header) return 0;
+    if (header->nfiles >= 32) return 0;
+    
+    const char* norm_name = name;
+    if (name[0] == '/') norm_name++;
+    
+    for (unsigned int i = 0; i < header->nfiles; i++) {
+        const char* f_name = header->files[i].name;
+        if (f_name[0] == '/') f_name++;
+        if (strcmp(f_name, norm_name) == 0) {
+            return 0;
+        }
+    }
+    
+    unsigned int idx = header->nfiles;
+    strncpy(header->files[idx].name, norm_name, 31);
+    header->files[idx].name[31] = '\0';
+    header->files[idx].is_dir = is_dir;
+    header->files[idx].length = 0;
+    header->files[idx].offset = 0;
+    header->nfiles++;
+    return 1;
+}
+
+int write_file_content(const char* name, const char* content, unsigned int length) {
+    if (!header) return 0;
+    
+    const char* norm_name = name;
+    if (name[0] == '/') norm_name++;
+    
+    for (unsigned int i = 0; i < header->nfiles; i++) {
+        const char* f_name = header->files[i].name;
+        if (f_name[0] == '/') f_name++;
+        
+        if (strcmp(f_name, norm_name) == 0) {
+            char* new_ptr = (char*)kmalloc(length + 1);
+            if (!new_ptr) return 0;
+            memory_copy(content, new_ptr, length);
+            new_ptr[length] = '\0';
+            
+            header->files[i].offset = (unsigned int)new_ptr - root_address;
+            header->files[i].length = length;
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int directory_exists(const char* path) {
+    if (!header) return 0;
+    if (strcmp(path, "/") == 0 || strcmp(path, "/initrd") == 0) return 1;
+    
+    const char* norm_path = path;
+    if (path[0] == '/') norm_path++;
+    
+    for (unsigned int i = 0; i < header->nfiles; i++) {
+        const char* f_name = header->files[i].name;
+        if (f_name[0] == '/') f_name++;
+        
+        if (strcmp(f_name, norm_path) == 0 && header->files[i].is_dir) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 // ==============================================================================
 // INITRD - VFS Adapter Implementations
 // ==============================================================================
