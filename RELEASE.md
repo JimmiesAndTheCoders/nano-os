@@ -26,4 +26,8 @@ Build & Deployment
 
 Nano OS is now built using an automated pipeline via GitHub Actions.
 
-Every tagged release (v*) will automatically produce a nano_os.img file, available in the "Releases" section of the repository.
+Version 1.1.0
+
+Added the mouse track on status.
+
+Every tagged release (v*) will manually produce a nano_os-[VERSION].img file, available in the "Releases" section of the repository.
