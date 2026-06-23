@@ -55,6 +55,16 @@ void test_memory_copy() {
     assert(strcmp(dest, "kernel data") == 0);
 }
 
+void test_itoa() {
+    char buf[16];
+    itoa(123, buf);
+    assert(strcmp(buf, "123") == 0);
+    itoa(-456, buf);
+    assert(strcmp(buf, "-456") == 0);
+    itoa(0, buf);
+    assert(strcmp(buf, "0") == 0);
+}
+
 int main() {
     printf("=======================================\n");
     printf(" Nano OS - Utility Function Test Suite \n");
@@ -65,6 +75,7 @@ int main() {
     RUN_TEST(test_append);
     RUN_TEST(test_backspace);
     RUN_TEST(test_memory_copy);
+    RUN_TEST(test_itoa);
 
     printf("=======================================\n");
     printf(" All utility tests passed successfully!\n");

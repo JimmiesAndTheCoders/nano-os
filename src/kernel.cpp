@@ -4,6 +4,7 @@ extern "C" {
     #include "screen.h"
     #include "cpu.h"
     #include "keyboard.h"
+    #include "mouse.h"
     #include "shell.h"
     #include "pmm.h"
     #include "kmalloc.h"
@@ -62,7 +63,8 @@ extern "C" void kernel_main() {
     init_syscalls();                 
     init_timer(100);
     init_tasking();                  
-    init_keyboard();                 
+    init_keyboard();
+    init_mouse();
 
     task_add(heartbeat_task, "heartbeat"); 
     task_add(background_worker_task, "worker1");

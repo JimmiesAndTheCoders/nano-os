@@ -24,7 +24,7 @@ This roadmap outlines the planned features and improvements for Nano OS. The pro
 <br>
 
 Phase 2 (Fully GUI operating system): 
-- [ ] Implement a PS/2 mouse driver with interrupt-driven (IRQ 12) coordinate tracking.
+- [X] Implement a PS/2 mouse driver with interrupt-driven (IRQ 12) coordinate tracking.
 - [ ] Create a basic Window Manager (compositing, overlapping windows, dragging, and resizing).
 - [ ] Develop a standard GUI Toolkit (buttons, text boxes, dialogs, and sliders).
 - [ ] Implement an ATA/IDE PIO disk driver for persistent read/write storage.

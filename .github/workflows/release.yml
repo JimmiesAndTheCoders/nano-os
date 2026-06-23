@@ -21,7 +21,7 @@ jobs:
           make
           # Ensure your build process creates nano_os.img
           # If it creates it in a specific folder, adjust this path:
-          ls -lh nano_os.img
+          ls -lh build/nano_os.img
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3

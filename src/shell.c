@@ -2,6 +2,7 @@
 #include "screen.h"
 #include "util.h"
 #include "initrd.h"
+#include "mouse.h"
 
 void print_prompt() {
     print("nano> ");
@@ -50,6 +51,16 @@ void process_command(char *input) {
         print("  Core state : RUNNING (32-bit Protected Mode)\n");
         print("  Memory map : OK [Segment Limits: 4GB Flat]\n");
         print("  Interrupts : ACTIVE [IDT installed, PIC initialized]\n");
+        
+        char mx_str[16];
+        char my_str[16];
+        itoa(get_mouse_x(), mx_str);
+        itoa(get_mouse_y(), my_str);
+        print("  Mouse pos  : X=");
+        print(mx_str);
+        print(" Y=");
+        print(my_str);
+        print("\n");
     } 
     else if (strcmp(input, "nano --status") == 0) {
         print("      \\|/  \n");
