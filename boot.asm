@@ -37,20 +37,32 @@ start:
     call print_string
     call load_kernel_from_disk
 
-    ; --- NEW: VESA VBE Setup ---
+    ; --- VESA VBE Setup & Initialization ---
+    ; Clear VBE Info region to avoid reading stale boot memory values
+    mov edi, VBE_INFO_ADDR
+    xor eax, eax
+    mov ecx, 64
+    rep stosd
+
     ; Query VBE Mode Info for Mode 0x115 (800x600x24/32) with Linear Framebuffer (0x4000)
     mov ax, 0x4F01
     mov cx, 0x4115
     mov di, VBE_INFO_ADDR
     int 0x10
     cmp ax, 0x004F
-    jne .skip_vesa            ; If VBE unsupported, stay in text mode!
+    jne .skip_vesa            ; If query unsupported, stay in text mode
 
     mov ax, 0x4F02            ; Set VBE Mode
     mov bx, 0x4115
     int 0x10
+    cmp ax, 0x004F
+    je .skip_vesa_clear       ; If successful, bypass text fallback
 
 .skip_vesa:
+    ; Force clear resolution parameters to safely enforce VGA text mode fallback
+    mov word [VBE_INFO_ADDR + 18], 0
+
+.skip_vesa_clear:
     ; 5. Transition to Protected Mode
     cli
     lgdt [gdt_descriptor]
@@ -173,7 +185,7 @@ setup_paging:
     or eax, 7 
     mov [PAGE_DIR_ADDR], eax
 
-    ; --- NEW: Map VBE Linear Framebuffer using Page Size Extension (PSE) ---
+    ; --- Map VBE Linear Framebuffer using Page Size Extension (PSE) ---
     mov eax, cr4
     or eax, 0x00000010         ; Enable PSE (Bit 4)
     mov cr4, eax
@@ -193,7 +205,7 @@ setup_paging:
 
     mov [ebx], edx             ; Map first 4MB of video memory
     add edx, 0x400000
-    mov [ebx+4], edx           ; Map second 4MB of video memory (just in case!)
+    mov [ebx+4], edx           ; Map second 4MB of video memory
 
 .done_paging:
     mov eax, PAGE_DIR_ADDR

@@ -31,7 +31,7 @@ void heartbeat_task() {
     static int toggle = 0;
     while(1) {
         if (vbe->width > 0) {
-            fill_rect(vbe->width - 20, vbe->height - 20, 10, 10, toggle ? 0x00FF00 : 0x000000);
+            fill_rect(vbe->width - 20, vbe->height - 20, 10, 10, toggle ? 0xFF00FF00 : 0xFF000000); // Explicit full alpha green/black
         } else {
             volatile char *video = (char*)0xb8000;
             int offset = (25 * 80 * 2) - 2; 
@@ -88,7 +88,8 @@ extern "C" void kernel_main() {
     vbe_mode_info_t* vbe = (vbe_mode_info_t*)0x5000;
     if (vbe->width > 0) {
         for (int i = 0; i < vbe->width; i++) {
-            draw_line(i, 0, i, 5, (i % 255) << 16 | (255 - (i % 255)) << 8 | 255);
+            // Include 0xFF000000 base to guarantee opaque rendering
+            draw_line(i, 0, i, 5, 0xFF000000 | (i % 255) << 16 | (255 - (i % 255)) << 8 | 255);
         }
     }
     

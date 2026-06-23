@@ -14,7 +14,7 @@ VgaScreen::VgaScreen() : cursor_x(0), cursor_y(0) {}
 
 void VgaScreen::clear() {
     if (vbe_info->width > 0) {
-        fill_rect(0, 0, vbe_info->width, vbe_info->height, 0x000000); // Black background
+        fill_rect(0, 0, vbe_info->width, vbe_info->height, 0xFF000000); // Opaque black background
     } else {
         unsigned char* vidmem = (unsigned char*)VIDEO_ADDRESS;
         for (int i = 0; i < MAX_ROWS * MAX_COLS; i++) {
@@ -39,7 +39,6 @@ static void draw_glyph(int px_x, int px_y, char c, unsigned int color) {
     const unsigned char* glyph = font8x8[c - 32];
     for (int row = 0; row < 8; row++) {
         for (int col = 0; col < 8; col++) {
-            // FIX: Read bits from left (MSB) to right (LSB) by subtracting from 7!
             if (glyph[row] & (1 << (7 - col))) {
                 // Scale x2 for better readability on high-res monitors
                 put_pixel(px_x + col*2, px_y + row*2, color);
@@ -63,10 +62,10 @@ void VgaScreen::put_char(char c) {
         } else if (c == '\b') {
             if (cursor_x > 0) {
                 cursor_x--;
-                fill_rect(cursor_x * 16, cursor_y * 16, 16, 16, 0x000000);
+                fill_rect(cursor_x * 16, cursor_y * 16, 16, 16, 0xFF000000); // Opaque black
             }
         } else {
-            draw_glyph(cursor_x * 16, cursor_y * 16, c, 0xFFFFFF); // White Text
+            draw_glyph(cursor_x * 16, cursor_y * 16, c, 0xFFFFFFFF); // Opaque white text
             cursor_x++;
             if (cursor_x >= max_cols) {
                 cursor_x = 0;
@@ -83,7 +82,7 @@ void VgaScreen::put_char(char c) {
                         (char*)(vbe_info->framebuffer), 
                         byte_size - row_size);
             
-            fill_rect(0, (max_rows - 1) * 16, vbe_info->width, 16, 0x000000);
+            fill_rect(0, (max_rows - 1) * 16, vbe_info->width, 16, 0xFF000000); // Opaque black line
             cursor_y--;
         }
         return;
