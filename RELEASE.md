@@ -16,10 +16,6 @@ We are thrilled to announce the completion of Phase 1 of Nano OS! This release r
 - Graphics: Enabled VESA/VBE modes, providing the foundation for high-resolution graphics.
 - Reliability: Integrated a C utility test harness and streamlined the build system for seamless operation across Linux, macOS, and Windows.
 
-#### Build & Deployment
-
-Nano OS is now built using an automated pipeline via GitHub Actions.
-
 ## Version 1.1.0
 
 Added the mouse track on status.
@@ -44,4 +40,7 @@ Added feature:
 Added command:
 - `pci`
 
+<br>
+
+Nano OS is now built using an automated pipeline via GitHub Actions.
 Every tagged release (v*) will manually produce a nano_os-[VERSION].img file, available in the "Releases" section of the repository.
