@@ -15,6 +15,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
+      - name: Install NASM
+        run: sudo apt-get update && sudo apt-get install -y nasm
+
       - name: Build Nano OS
         run: |
           # Assuming you have a standard Makefile
