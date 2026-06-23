@@ -81,7 +81,7 @@ extern "C" void kernel_main() {
 
     // VFS & Mount Initialisation
     init_vfs();
-    vfs_mount("/initrd", init_initrd_vfs());
+    vfs_root = init_initrd_vfs();
 
     int fat_status = init_fat32();
 
@@ -89,7 +89,7 @@ extern "C" void kernel_main() {
     task_add(background_worker_task, "worker1");
     task_add_user(user_mode_task, "user_task1"); 
 
-    clear_screen(); 
+    clear_screen();
 
     vbe_mode_info_t* vbe = (vbe_mode_info_t*)0x5000;
     if (vbe->width > 0) {
@@ -138,7 +138,7 @@ extern "C" void kernel_main() {
 
     // Report VFS status
     print("[OK] Virtual File System abstraction initialized\n");
-    print("[OK] RAM disk cleanly mapped at mount-point /initrd\n");
+    print("[OK] RAM disk cleanly mapped as the root filesystem (/)\n");
     
     if (fat_status == 0) {
         vfs_mount("/fat", fat32_get_vfs_root());

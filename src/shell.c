@@ -9,7 +9,7 @@
 #include "kmalloc.h"
 #include "ata.h"
 
-static char current_dir[64] = "/initrd";
+static char current_dir[64] = "/";
 
 /* Terminal editor status parameters */
 static int editor_active = 0;

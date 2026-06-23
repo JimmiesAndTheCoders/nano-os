@@ -98,7 +98,7 @@ $(KERN_BIN): $(ENTRY_O) $(INTR_O) $(ALL_OBJS) linker.ld | $(BUILD_DIR)
 # Image creation
 $(RAW_IMG): $(BOOT_BIN) $(KERN_BIN) $(INITRD_IMG) | $(BUILD_DIR)
 	cat $(BOOT_BIN) $(KERN_BIN) > $(FULL_KERN)
-	dd if=/dev/zero of=$(RAW_IMG) bs=512 count=2880
+	dd if=/dev/zero of=$(RAW_IMG) bs=512 count=20480
 	dd if=$(FULL_KERN) of=$(RAW_IMG) conv=notrunc
 	dd if=$(INITRD_IMG) of=$(RAW_IMG) obs=512 seek=301 conv=notrunc
 

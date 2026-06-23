@@ -32,7 +32,7 @@ start:
     or al, 2
     out 0x92, al
 
-    ; 4. Load Kernel (17 sectors = 8.5KB)
+    ; 4. Load Kernel & Initrd
     mov si, load_kernel_msg
     call print_string
     call load_kernel_from_disk
@@ -75,12 +75,21 @@ start:
     jmp CODE_SEG:init_pm
 
 load_kernel_from_disk:
+    ; Read first chunk of the kernel (120 sectors)
     mov ah, 0x42                    
     mov dl, [BOOT_DRIVE]            
-    mov si, disk_address_packet     
+    mov si, disk_address_packet1     
     int 0x13                        
     jc disk_error                   
     
+    ; Read second chunk of the kernel (120 sectors)
+    mov ah, 0x42                    
+    mov dl, [BOOT_DRIVE]            
+    mov si, disk_address_packet2     
+    int 0x13                        
+    jc disk_error                   
+    
+    ; Read Initrd (50 sectors)
     mov ah, 0x42
     mov dl, [BOOT_DRIVE]
     mov si, initrd_packet           
@@ -90,19 +99,26 @@ load_kernel_from_disk:
     ret
 
 align 4
-disk_address_packet:
-    db 0x10                         
-    db 0                            
-    dw 250                         
-    dw 0x0000, 0x1000               
-    dq 1                            
+disk_address_packet1:
+    db 0x10                         ; Size of packet (16 bytes)
+    db 0                            ; Reserved (0)
+    dw 120                          ; Number of sectors to read (60 KB)
+    dw 0x0000, 0x1000               ; Offset 0x0000, Segment 0x1000 (0x10000 physical)
+    dq 1                            ; Starting LBA 1
+
+disk_address_packet2:
+    db 0x10                         ; Size of packet (16 bytes)
+    db 0                            ; Reserved (0)
+    dw 120                          ; Number of sectors to read (60 KB)
+    dw 0x0000, 0x1F00               ; Offset 0x0000, Segment 0x1F00 (0x1F000 physical)
+    dq 121                          ; Starting LBA 121
 
 initrd_packet:
-    db 0x10                         
-    db 0                            
-    dw 50                           
-    dw 0x0000, 0x3000               
-    dq 301                          
+    db 0x10                         ; Size of packet (16 bytes)
+    db 0                            ; Reserved (0)
+    dw 50                           ; Number of sectors to read (25 KB)
+    dw 0x0000, 0x3000               ; Offset 0x0000, Segment 0x3000 (0x30000 physical)
+    dq 301                          ; Starting LBA 301
 
 disk_error:
     mov si, error_msg
