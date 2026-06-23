@@ -1,0 +1,37 @@
+# Using Nano Shell
+
+Once booted, interact with the system using the following commands:
+
+## General
+
+- `help`: Displays a list of available commands.
+- `clear`: Clears the screen.
+- `echo [text]`: Print a line of text.
+- `pwd`: Print the current working directory.
+- `cd [dir]`: Change directory (validated path check).
+- `ls`: List available files on the RAM disk.
+- `cat [file]`: Display the contents of a file.
+- `grep [pat] [f]`: Find lines matching a pattern in a file.
+- `touch [file]`: Create an empty file on RAM disk.
+- `mkdir [dir]`: Create a directory on RAM disk.
+- `cnode [file]`: Run the terminal text/code editor.
+- `date`: View current Real-Time Clock date and time.
+- `status`: Displays kernel operational metrics.
+- `nano --status`: View system mascot information.
+- `halt`: Safely stops the CPU.
+
+## PCI
+
+- `pci`: List all detected PCI bus devices.
+    - `msi-enable [index] [vector]`: Enable MSI on specified device.
+    - `msi-disable [index]`: Disable MSI on specified device.
+    - `msix-enable [index] [vector]`: Enable MSI on specified device.
+    - `msi-disable [index]`: Disable MSI on specified device.
+    
+## ATA
+
+- `ata-identify`: Identify primary master ATA drive.
+- `ata-read [lba] [count]`: Read sectors using PIO.
+- `ata-write [lba] [text]`: Write text to sector using PIO.
+- `ata-dma-read [lba] [count]`: Read sectors using DMA.
+- `ata-dma-write [lba] [text]`: Write text to sector using DMA.

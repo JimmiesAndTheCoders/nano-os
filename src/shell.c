@@ -5,6 +5,8 @@
 #include "initrd.h"
 #include "mouse.h"
 #include "pci.h"
+#include "kmalloc.h"
+#include "ata.h"
 
 static char current_dir[64] = "/";
 
@@ -195,6 +197,11 @@ void process_command(char *input) {
         print("  pci msi-disable [index]          - Disable MSI on specified device.\n");
         print("  pci msix-enable [index] [vector] - Enable MSI-X on specified device.\n");
         print("  pci msix-disable [index]         - Disable MSI-X on specified device.\n");
+        print("  ata-identify                     - Identify primary master ATA drive.\n");
+        print("  ata-read [lba] [count]           - Read sectors using PIO.\n");
+        print("  ata-write [lba] [text]           - Write text to sector using PIO.\n");
+        print("  ata-dma-read [lba] [count]       - Read sectors using DMA.\n");
+        print("  ata-dma-write [lba] [text]       - Write text to sector using DMA.\n");
         print("  date         - View current Real-Time Clock date and time.\n");
         print("  status       - Inspect system operational metrics.\n");
         print("  nano --status- Execute system mascot configuration check.\n");
@@ -543,6 +550,172 @@ void process_command(char *input) {
             } else {
                 print("Error: MSI-X disable failed or unsupported.\n");
             }
+        }
+    }
+    else if (strcmp(input, "ata-identify") == 0) {
+        unsigned short buf[256];
+        int res = ata_identify_device(ATA_PRIMARY_IO, ATA_DRIVE_MASTER, buf);
+        if (res == 0) {
+            print("ATA Primary Master identified successfully!\n");
+            print("Model: ");
+            char model[41];
+            for (int i = 0; i < 20; i++) {
+                model[i * 2] = (char)(buf[27 + i] >> 8);
+                model[i * 2 + 1] = (char)(buf[27 + i] & 0xFF);
+            }
+            model[40] = '\0';
+            print(model);
+            print("\n");
+            
+            unsigned int sectors = *((unsigned int*)&buf[60]);
+            print("Capacity: ");
+            char sectors_str[16];
+            itoa(sectors, sectors_str);
+            print(sectors_str);
+            print(" sectors (");
+            itoa(sectors * 512 / 1024, sectors_str);
+            print(sectors_str);
+            print(" KB)\n");
+        } else if (res == -1) {
+            print("No device detected on Primary Master.\n");
+        } else if (res == -2) {
+            print("ATAPI device detected on Primary Master.\n");
+        } else {
+            print("Error identifying device.\n");
+        }
+    }
+    else if (strncmp_local(input, "ata-read ", 9) == 0) {
+        char* args = input + 9;
+        int lba = 0, count = 0, i = 0;
+        while (args[i] >= '0' && args[i] <= '9') {
+            lba = lba * 10 + (args[i] - '0');
+            i++;
+        }
+        if (args[i] == ' ') {
+            i++;
+            while (args[i] >= '0' && args[i] <= '9') {
+                count = count * 10 + (args[i] - '0');
+                i++;
+            }
+            if (count > 0 && count <= 8) {
+                unsigned short* sector_buf = (unsigned short*)kmalloc(count * 512);
+                if (sector_buf) {
+                    int res = ata_read_pio(ATA_PRIMARY_IO, ATA_DRIVE_MASTER, lba, count, sector_buf);
+                    if (res == 0) {
+                        print("Read successful (PIO):\n");
+                        char* char_buf = (char*)sector_buf;
+                        char_buf[count * 512 - 1] = '\0';
+                        print(char_buf);
+                        print("\n");
+                    } else {
+                        print("Error reading via PIO.\n");
+                    }
+                    kfree(sector_buf);
+                } else {
+                    print("Memory allocation failed.\n");
+                }
+            } else {
+                print("Count must be between 1 and 8.\n");
+            }
+        } else {
+            print("Usage: ata-read [lba] [count]\n");
+        }
+    }
+    else if (strncmp_local(input, "ata-write ", 10) == 0) {
+        char* args = input + 10;
+        int lba = 0, i = 0;
+        while (args[i] >= '0' && args[i] <= '9') {
+            lba = lba * 10 + (args[i] - '0');
+            i++;
+        }
+        if (args[i] == ' ') {
+            char* text = args + i + 1;
+            int text_len = strlen(text);
+            unsigned short sector_buf[256];
+            for (int j = 0; j < 256; j++) sector_buf[j] = 0;
+            memory_copy(text, (char*)sector_buf, text_len > 512 ? 512 : text_len);
+            
+            int res = ata_write_pio(ATA_PRIMARY_IO, ATA_DRIVE_MASTER, lba, 1, sector_buf);
+            if (res == 0) {
+                print("Write successful (PIO) to sector ");
+                char lba_str[16];
+                itoa(lba, lba_str);
+                print(lba_str);
+                print("\n");
+            } else {
+                print("Error writing via PIO.\n");
+            }
+        } else {
+            print("Usage: ata-write [lba] [text]\n");
+        }
+    }
+    else if (strncmp_local(input, "ata-dma-read ", 13) == 0) {
+        char* args = input + 13;
+        int lba = 0, count = 0, i = 0;
+        while (args[i] >= '0' && args[i] <= '9') {
+            lba = lba * 10 + (args[i] - '0');
+            i++;
+        }
+        if (args[i] == ' ') {
+            i++;
+            while (args[i] >= '0' && args[i] <= '9') {
+                count = count * 10 + (args[i] - '0');
+                i++;
+            }
+            if (count > 0 && count <= 8) {
+                unsigned short* sector_buf = (unsigned short*)kmalloc(count * 512);
+                if (sector_buf) {
+                    int res = ata_read_dma(ATA_PRIMARY_IO, ATA_DRIVE_MASTER, lba, count, sector_buf);
+                    if (res == 0) {
+                        print("Read successful (DMA):\n");
+                        char* char_buf = (char*)sector_buf;
+                        char_buf[count * 512 - 1] = '\0';
+                        print(char_buf);
+                        print("\n");
+                    } else if (res == -2) {
+                        print("DMA not supported by controller.\n");
+                    } else {
+                        print("Error reading via DMA.\n");
+                    }
+                    kfree(sector_buf);
+                } else {
+                    print("Memory allocation failed.\n");
+                }
+            } else {
+                print("Count must be between 1 and 8.\n");
+            }
+        } else {
+            print("Usage: ata-dma-read [lba] [count]\n");
+        }
+    }
+    else if (strncmp_local(input, "ata-dma-write ", 14) == 0) {
+        char* args = input + 14;
+        int lba = 0, i = 0;
+        while (args[i] >= '0' && args[i] <= '9') {
+            lba = lba * 10 + (args[i] - '0');
+            i++;
+        }
+        if (args[i] == ' ') {
+            char* text = args + i + 1;
+            int text_len = strlen(text);
+            unsigned short sector_buf[256];
+            for (int j = 0; j < 256; j++) sector_buf[j] = 0;
+            memory_copy(text, (char*)sector_buf, text_len > 512 ? 512 : text_len);
+            
+            int res = ata_write_dma(ATA_PRIMARY_IO, ATA_DRIVE_MASTER, lba, 1, sector_buf);
+            if (res == 0) {
+                print("Write successful (DMA) to sector ");
+                char lba_str[16];
+                itoa(lba, lba_str);
+                print(lba_str);
+                print("\n");
+            } else if (res == -2) {
+                print("DMA not supported by controller.\n");
+            } else {
+                print("Error writing via DMA.\n");
+            }
+        } else {
+            print("Usage: ata-dma-write [lba] [text]\n");
         }
     }
     else if (strcmp(input, "date") == 0) {

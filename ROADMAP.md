@@ -29,8 +29,8 @@ Phase 2: Core Subsystems & Persistent Storage
 - [X] Add support for MSI/MSI-X (Message Signaled Interrupts) in the PCI driver.
 - [X] Implement a Real-Time Clock (RTC) / CMOS driver for accurate system time tracking.
 - [X] Upgrade timer support to the High Precision Event Timer (HPET) or APIC timer.
-- [ ] Implement an ATA/IDE PIO disk driver for basic read/write storage.
-- [ ] Upgrade ATA driver to support DMA (Direct Memory Access) for faster disk I/O.
+- [X] Implement an ATA/IDE PIO disk driver for basic read/write storage.
+- [X] Upgrade ATA driver to support DMA (Direct Memory Access) for faster disk I/O.
 - [ ] Create a Virtual File System (VFS) abstraction (open, read, write, close, ioctl, mount points).
 - [ ] Implement a FAT32 driver (MBR parsing, Boot sector, FAT tables, clusters, and Long File Names).
 - [ ] Implement an Ext2 file system driver (Superblock, block groups, inodes, directory parsing).

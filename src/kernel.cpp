@@ -19,6 +19,7 @@ extern "C" {
     #include "graphics.h"
     #include "vbe.h"
     #include "pci.h"
+    #include "ata.h"
     
     void call_global_constructors();
 }
@@ -68,6 +69,7 @@ extern "C" void kernel_main() {
     init_pci();
     init_lapic();
     init_apic_timer(100);            // Upgrade system timer tick to Local APIC Timer
+    init_ata();
 
     task_add(heartbeat_task, "heartbeat"); 
     task_add(background_worker_task, "worker1");
@@ -112,6 +114,12 @@ extern "C" void kernel_main() {
     print("[OK] User-space Software Interrupts (Syscalls) ready\n");
     print("[OK] PCI Bus Enumerator successfully initialized\n");
     print("[OK] Local APIC mapped and configured for MSI transport\n");
+    
+    if (ata_has_dma()) {
+        print("[OK] ATA/IDE Controller found. Bus Master DMA initialized\n");
+    } else {
+        print("[OK] ATA/IDE Controller found. Fallback to PIO operations\n");
+    }
     
     rtc_time_t boot_time;
     rtc_get_time(&boot_time);

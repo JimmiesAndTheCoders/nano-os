@@ -60,6 +60,13 @@ Added feature:
 - Masked legacy PIC PIT line to reduce bus interrupts.
 - Implemented robust fallback logic to the PIT in cases where LAPIC initialization or calibration fails.
 
+## Version 1.7.0
+
+Added feature:
+- Developed an ATA/IDE PIO disk driver to support raw read, write, and identify diagnostics on storage drives.
+- Upgraded the storage layer to support Bus Master IDE DMA with physical descriptor tables and page-aligned BSS bounce buffer structures.
+- Exposed interactive diagnostics in the shell terminal to evaluate disk stability under both PIO and DMA channels.
+
 <br>
 
 Nano OS is now built using an automated pipeline via GitHub Actions.
