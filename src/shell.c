@@ -4,8 +4,158 @@
 #include "initrd.h"
 #include "mouse.h"
 
+static char current_dir[64] = "/";
+
+/* Terminal editor status parameters */
+static int editor_active = 0;
+static char editing_filename[64];
+static char edit_buffer[2048];
+static int edit_len = 0;
+
+static const char editor_sc_name[] = { 
+    '?', '?', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '?', '?', 
+    'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '?', '?', 
+    'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', '`', '?', '\\', 
+    'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', '?', '?', '?', ' '
+};
+
+static int strncmp_local(const char *s1, const char *s2, int n) {
+    for (int i = 0; i < n; i++) {
+        if (s1[i] != s2[i]) {
+            return (unsigned char)s1[i] - (unsigned char)s2[i];
+        }
+        if (s1[i] == '\0') {
+            return 0;
+        }
+    }
+    return 0;
+}
+
+static const char* strstr_local(const char *haystack, const char *needle) {
+    if (!*needle) return haystack;
+    for (; *haystack; haystack++) {
+        if (*haystack == *needle) {
+            const char *h = haystack, *n = needle;
+            while (*h && *n && *h == *n) {
+                h++;
+                n++;
+            }
+            if (!*n) return haystack;
+        }
+    }
+    return 0;
+}
+
+static void build_full_path(const char* current, const char* relative, char* dest) {
+    int cur_len = strlen(current);
+    int rel_len = strlen(relative);
+    
+    if (relative[0] == '/') {
+        memory_copy(relative, dest, rel_len + 1);
+        return;
+    }
+    
+    memory_copy(current, dest, cur_len);
+    if (current[cur_len - 1] != '/') {
+        dest[cur_len] = '/';
+        memory_copy(relative, dest + cur_len + 1, rel_len + 1);
+    } else {
+        memory_copy(relative, dest + cur_len, rel_len + 1);
+    }
+}
+
+static void get_parent_directory(const char* path, char* dest) {
+    int len = strlen(path);
+    if (strcmp(path, "/") == 0) {
+        memory_copy("/", dest, 2);
+        return;
+    }
+    
+    memory_copy(path, dest, len + 1);
+    if (len > 1 && dest[len - 1] == '/') {
+        dest[len - 1] = '\0';
+        len--;
+    }
+    
+    for (int i = len - 1; i >= 0; i--) {
+        if (dest[i] == '/') {
+            if (i == 0) {
+                dest[1] = '\0';
+            } else {
+                dest[i] = '\0';
+            }
+            return;
+        }
+    }
+}
+
+/* Redraws the terminal editor screen cleanly */
+static void draw_editor_interface() {
+    clear_screen();
+    print("--------------------------------------------------------------------------------\n");
+    print("  CNODE TERMINAL EDITOR v1.0   |   Editing File: ");
+    print(editing_filename);
+    print("\n");
+    print("  [ESC]: Save & Exit           |   [F2]: Discard & Quit\n");
+    print("--------------------------------------------------------------------------------\n\n");
+    
+    if (edit_len > 0) {
+        print(edit_buffer);
+    }
+}
+
+int shell_editor_active() {
+    return editor_active;
+}
+
+void shell_editor_handle_key(unsigned char scancode) {
+    if (scancode == 1) { // ESC: Save & Exit
+        write_file_content(editing_filename, edit_buffer, edit_len);
+        editor_active = 0;
+        clear_screen();
+        print("File '");
+        print(editing_filename);
+        print("' saved successfully to RAM disk.\n\n");
+        print_prompt();
+    } 
+    else if (scancode == 60) { // F2: Discard changes & Quit
+        editor_active = 0;
+        clear_screen();
+        print("Editor closed. Changes discarded.\n\n");
+        print_prompt();
+    } 
+    else if (scancode == 14) { // Backspace
+        if (edit_len > 0) {
+            edit_buffer[--edit_len] = '\0';
+            draw_editor_interface(); // Redraw layout to keep text cursor stable
+        }
+    } 
+    else if (scancode == 28) { // Enter key
+        if (edit_len < 2046) {
+            edit_buffer[edit_len++] = '\n';
+            edit_buffer[edit_len] = '\0';
+            draw_editor_interface();
+        }
+    } 
+    else if (scancode <= 57) { // Char input keys
+        char letter = editor_sc_name[scancode];
+        if (letter != '?') {
+            if (edit_len < 2046) {
+                edit_buffer[edit_len++] = letter;
+                edit_buffer[edit_len] = '\0';
+                
+                // Fast path print for single character execution efficiency
+                char str[2] = {letter, '\0'};
+                print(str);
+            }
+        }
+    }
+}
+
 void print_prompt() {
-    print("nano> ");
+    print("nano:");
+    print(current_dir);
+    print("> ");
 }
 
 void process_command(char *input) {
@@ -18,8 +168,15 @@ void process_command(char *input) {
         print("Available Commands:\n");
         print("  help         - Display this reference panel.\n");
         print("  clear        - Clear the display terminal.\n");
-        print("  ls           - List available files on the RAM disk.\n");
+        print("  echo [text]  - Print a line of text.\n");
+        print("  pwd          - Print the current working directory.\n");
+        print("  cd [dir]     - Change directory (validated path check).\n");
+        print("  ls           - List available files in this directory.\n");
         print("  cat [file]   - Display the contents of a file.\n");
+        print("  grep [pat] [f]- Find lines matching a pattern in a file.\n");
+        print("  touch [file] - Create an empty file on RAM disk.\n");
+        print("  mkdir [dir]  - Create a directory on RAM disk.\n");
+        print("  cnode [file] - Run the terminal text/code editor.\n");
         print("  status       - Inspect system operational metrics.\n");
         print("  nano --status- Execute system mascot configuration check.\n");
         print("  halt         - Safely power down the hardware processor.\n");
@@ -27,13 +184,55 @@ void process_command(char *input) {
     else if (strcmp(input, "clear") == 0) {
         clear_screen();
     } 
+    else if (strcmp(input, "pwd") == 0) {
+        print(current_dir);
+        print("\n");
+    }
+    else if (strcmp(input, "echo") == 0) {
+        print("\n");
+    }
+    else if (strncmp_local(input, "echo ", 5) == 0) {
+        print(input + 5);
+        print("\n");
+    }
+    else if (strcmp(input, "cd") == 0) {
+        memory_copy("/", current_dir, 2);
+    }
+    else if (strncmp_local(input, "cd ", 3) == 0) {
+        char *dir = input + 3;
+        char target_path[64];
+        
+        if (strcmp(dir, "..") == 0) {
+            get_parent_directory(current_dir, target_path);
+        } else if (strcmp(dir, ".") == 0) {
+            target_path[0] = '\0';
+        } else {
+            build_full_path(current_dir, dir, target_path);
+        }
+        
+        if (target_path[0] != '\0') {
+            if (directory_exists(target_path)) {
+                int path_len = strlen(target_path);
+                if (path_len < 64) {
+                    memory_copy(target_path, current_dir, path_len + 1);
+                }
+            } else {
+                print("Error: Directory '");
+                print(dir);
+                print("' not found.\n");
+            }
+        }
+    }
     else if (strcmp(input, "ls") == 0) {
-        list_files();
+        list_files(current_dir);
     } 
-    else if (strcmp(input, "cat ") == 0 || (input[0]=='c' && input[1]=='a' && input[2]=='t')) {
+    else if (strncmp_local(input, "cat ", 4) == 0) {
         if (strlen(input) > 4) {
             char* filename = input + 4; 
-            char* content = read_file(filename);
+            char target_path[64];
+            build_full_path(current_dir, filename, target_path);
+            
+            char* content = read_file(target_path);
             if (content) {
                 print(content);
                 print("\n");
@@ -45,6 +244,116 @@ void process_command(char *input) {
         } else {
             print("Usage: cat [filename]\n");
         }
+    }
+    else if (strncmp_local(input, "grep ", 5) == 0) {
+        char* args = input + 5;
+        char* pattern = args;
+        char* filename = 0;
+        
+        int i = 0;
+        while (args[i] != '\0') {
+            if (args[i] == ' ') {
+                args[i] = '\0';
+                filename = args + i + 1;
+                break;
+            }
+            i++;
+        }
+        
+        if (!filename || strlen(filename) == 0) {
+            print("Usage: grep [pattern] [filename]\n");
+        } else {
+            char target_path[64];
+            build_full_path(current_dir, filename, target_path);
+            
+            char* content = read_file(target_path);
+            if (!content) {
+                print("Error: File '");
+                print(filename);
+                print("' not found.\n");
+            } else {
+                char line_buf[256];
+                int line_idx = 0;
+                int char_idx = 0;
+                while (1) {
+                    char c = content[char_idx++];
+                    if (c == '\n' || c == '\r' || c == '\0') {
+                        line_buf[line_idx] = '\0';
+                        if (line_idx > 0) {
+                            if (strstr_local(line_buf, pattern) != 0) {
+                                print(line_buf);
+                                print("\n");
+                            }
+                        }
+                        line_idx = 0;
+                        if (c == '\0') break;
+                    } else {
+                        if (line_idx < 254) {
+                            line_buf[line_idx++] = c;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    else if (strncmp_local(input, "touch ", 6) == 0) {
+        char *filename = input + 6;
+        char target_path[64];
+        build_full_path(current_dir, filename, target_path);
+        
+        if (create_file(target_path, 0)) {
+            print("File '");
+            print(filename);
+            print("' created successfully.\n");
+        } else {
+            print("Error: Cannot create '");
+            print(filename);
+            print("'. Path may exist or disk is full.\n");
+        }
+    }
+    else if (strncmp_local(input, "mkdir ", 6) == 0) {
+        char *dirname = input + 6;
+        char target_path[64];
+        build_full_path(current_dir, dirname, target_path);
+        
+        if (create_file(target_path, 1)) {
+            print("Directory '");
+            print(dirname);
+            print("' created successfully.\n");
+        } else {
+            print("Error: Cannot create directory '");
+            print(dirname);
+            print("'. Path may exist or disk is full.\n");
+        }
+    }
+    else if (strncmp_local(input, "cnode ", 6) == 0) {
+        char* filename = input + 6;
+        char target_path[64];
+        build_full_path(current_dir, filename, target_path);
+        
+        // Auto-create file if it does not exist (mirroring Pico/Nano behavior)
+        if (!read_file(target_path)) {
+            if (!create_file(target_path, 0)) {
+                print("Error: Could not instantiate '");
+                print(filename);
+                print("'.\n");
+                return;
+            }
+        }
+        
+        char* content = read_file(target_path);
+        int len = strlen(content);
+        if (len > 2040) len = 2040; // Upper limit of local buffer
+        
+        memory_copy(content, edit_buffer, len);
+        edit_buffer[len] = '\0';
+        edit_len = len;
+        
+        memory_copy(target_path, editing_filename, strlen(target_path) + 1);
+        editor_active = 1;
+        
+        draw_editor_interface();
+        return; // Retain current execution status without dropping prompt until saved
     }
     else if (strcmp(input, "status") == 0) {
         print("Nano OS System Status:\n");
@@ -73,9 +382,6 @@ void process_command(char *input) {
         print("Halting the system safely. Goodbye!\n");
         __asm__ __volatile__("cli\n\thlt");
     } 
-    else if (strlen(input) == 0) {
-        /* User hit enter without typing anything, do nothing */
-    }
     else {
         print("Error: Unknown command '");
         print(input);

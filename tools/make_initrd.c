@@ -6,11 +6,12 @@ typedef struct {
     char name[32];
     unsigned int offset;
     unsigned int length;
+    unsigned int is_dir; // Flag indicating if this is a directory
 } initrd_file_t;
 
 typedef struct {
     unsigned int nfiles;
-    initrd_file_t files[16];
+    initrd_file_t files[32]; // Updated to 32 slots
 } initrd_header_t;
 
 // Helper to extract just the file name, ignoring the folder path
@@ -29,7 +30,7 @@ int main(int argc, char **argv) {
     }
 
     int num_files = argc - 2;
-    if (num_files > 16) num_files = 16;
+    if (num_files > 32) num_files = 32;
 
     initrd_header_t header;
     memset(&header, 0, sizeof(initrd_header_t));
@@ -40,6 +41,7 @@ int main(int argc, char **argv) {
     // Calculate file sizes and offsets
     for(int i = 0; i < num_files; i++) {
         strncpy(header.files[i].name, get_filename(argv[i+2]), 31);
+        header.files[i].is_dir = 0; // Host-packed initial files are standard data files
         FILE *in = fopen(argv[i+2], "rb");
         if(!in) { printf("Error opening %s\n", argv[i+2]); return 1; }
         

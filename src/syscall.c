@@ -4,7 +4,6 @@
 #include "timer.h"
 
 static void *syscalls[4];
-extern void list_files();
 
 unsigned int syscall_handler(registers_t *regs) {
     if (regs->eax == SYS_PRINT) {
@@ -16,13 +15,14 @@ unsigned int syscall_handler(registers_t *regs) {
         regs->eax = (unsigned int)read_file(name);
     }
     else if (regs->eax == SYS_LIST_FILES) {
-        list_files();
+        list_files("/");
     }
     else if (regs->eax == SYS_GET_TICKS) {
         regs->eax = timer_get_ticks();
     }
     return (unsigned int)regs;
 }
+
 void init_syscalls() {
     register_interrupt_handler(0x80, syscall_handler);
 }

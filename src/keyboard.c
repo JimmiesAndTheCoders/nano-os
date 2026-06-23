@@ -5,10 +5,8 @@
 #include "util.h"
 #include "shell.h"
 
-/* Command line input accumulator */
 static char key_buffer[256];
 
-/* Keyboard scancode to ASCII layout mapping */
 const char sc_name[] = { '?', '?', '1', '2', '3', '4', '5', '6',     
     '7', '8', '9', '0', '-', '=', '?', '?', 'q', 'w', 'e', 'r', 't', 'y', 
     'u', 'i', 'o', 'p', '[', ']', '?', '?', 'a', 's', 'd', 'f', 'g', 
@@ -18,7 +16,13 @@ const char sc_name[] = { '?', '?', '1', '2', '3', '4', '5', '6',
 static unsigned int keyboard_callback(registers_t *regs) {
     unsigned char scancode = port_byte_in(0x60);
     
-    if (scancode & 0x80) return (unsigned int)regs; // Return current stack
+    if (scancode & 0x80) return (unsigned int)regs;
+
+    // --- INTERCEPT keystrokes if the cnode terminal editor is running ---
+    if (shell_editor_active()) {
+        shell_editor_handle_key(scancode);
+        return (unsigned int)regs;
+    }
 
     if (scancode == 14) {
         int len = strlen(key_buffer);
@@ -42,10 +46,10 @@ static unsigned int keyboard_callback(registers_t *regs) {
             }
         }
     }
-    return (unsigned int)regs; // MUST return the stack pointer
+    return (unsigned int)regs;
 }
 
 void init_keyboard() {
-    key_buffer[0] = '\0'; /* Ensure buffer starts fully empty */
+    key_buffer[0] = '\0';
     register_interrupt_handler(33, keyboard_callback);
 }
