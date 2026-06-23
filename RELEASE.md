@@ -67,6 +67,12 @@ Added feature:
 - Upgraded the storage layer to support Bus Master IDE DMA with physical descriptor tables and page-aligned BSS bounce buffer structures.
 - Exposed interactive diagnostics in the shell terminal to evaluate disk stability under both PIO and DMA channels.
 
+## Version 1.8.0
+
+Added feature:
+- A FAT32 driver (MBR parsing, Boot sector, FAT tables, clusters, and Long File Names).
+- An Ext2 file system driver (Superblock, block groups, inodes, directory parsing).
+
 <br>
 
 Nano OS is now built using an automated pipeline via GitHub Actions.

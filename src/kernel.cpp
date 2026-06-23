@@ -12,6 +12,8 @@ extern "C" {
     #include "timer.h"
     #include "task.h"
     #include "initrd.h"
+    #include "vfs.h"
+    #include "fat32.h"
     #include "util.h"
     #include "syscall.h"
     #include "nanolib.h"
@@ -71,6 +73,12 @@ extern "C" void kernel_main() {
     init_apic_timer(100);            // Upgrade system timer tick to Local APIC Timer
     init_ata();
 
+    // VFS & Mount Initialisation
+    init_vfs();
+    vfs_mount("/initrd", init_initrd_vfs());
+
+    int fat_status = init_fat32();
+
     task_add(heartbeat_task, "heartbeat"); 
     task_add(background_worker_task, "worker1");
     task_add_user(user_mode_task, "user_task1"); 
@@ -119,6 +127,17 @@ extern "C" void kernel_main() {
         print("[OK] ATA/IDE Controller found. Bus Master DMA initialized\n");
     } else {
         print("[OK] ATA/IDE Controller found. Fallback to PIO operations\n");
+    }
+
+    // Report VFS status
+    print("[OK] Virtual File System abstraction initialized\n");
+    print("[OK] RAM disk cleanly mapped at mount-point /initrd\n");
+    
+    if (fat_status == 0) {
+        vfs_mount("/fat", fat32_get_vfs_root());
+        print("[OK] MBR scanned. FAT32 Partition mounted at /fat\n");
+    } else {
+        print("[INFO] No FAT32 Partition detected on secondary master\n");
     }
     
     rtc_time_t boot_time;

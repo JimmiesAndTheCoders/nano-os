@@ -1,6 +1,8 @@
 #ifndef INITRD_H
 #define INITRD_H
 
+#include "vfs.h"
+
 typedef struct {
     char name[32];
     unsigned int offset; // Offset from the start of the RAM disk
@@ -19,5 +21,8 @@ char* read_file(const char* name);
 int create_file(const char* name, unsigned int is_dir);
 int write_file_content(const char* name, const char* content, unsigned int length);
 int directory_exists(const char* path);
+
+// VFS Adapter Generator
+vfs_node_t* init_initrd_vfs();
 
 #endif

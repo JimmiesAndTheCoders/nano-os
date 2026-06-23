@@ -31,8 +31,8 @@ Phase 2: Core Subsystems & Persistent Storage
 - [X] Upgrade timer support to the High Precision Event Timer (HPET) or APIC timer.
 - [X] Implement an ATA/IDE PIO disk driver for basic read/write storage.
 - [X] Upgrade ATA driver to support DMA (Direct Memory Access) for faster disk I/O.
-- [ ] Create a Virtual File System (VFS) abstraction (open, read, write, close, ioctl, mount points).
-- [ ] Implement a FAT32 driver (MBR parsing, Boot sector, FAT tables, clusters, and Long File Names).
+- [X] Create a Virtual File System (VFS) abstraction (open, read, write, close, ioctl, mount points).
+- [X] Implement a FAT32 driver (MBR parsing, Boot sector, FAT tables, clusters, and Long File Names).
 - [ ] Implement an Ext2 file system driver (Superblock, block groups, inodes, directory parsing).
 - [ ] Build a page cache and buffer cache mechanism to optimize disk read/write operations.
 - [ ] Add an ELF binary parser to dynamically load, map, and execute user-space applications.

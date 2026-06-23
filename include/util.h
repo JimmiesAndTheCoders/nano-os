@@ -2,6 +2,7 @@
 #define UTIL_H
 
 void memory_copy(const char *source, char *dest, int no_bytes);
+void memset(void *dest, unsigned char val, int count);
 
 /* String Utility Prototypes */
 int strlen(const char *s);

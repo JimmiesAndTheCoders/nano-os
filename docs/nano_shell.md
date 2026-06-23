@@ -9,11 +9,11 @@ Once booted, interact with the system using the following commands:
 - `echo [text]`: Print a line of text.
 - `pwd`: Print the current working directory.
 - `cd [dir]`: Change directory (validated path check).
-- `ls`: List available files on the RAM disk.
+- `ls`: List available files in this directory.
 - `cat [file]`: Display the contents of a file.
 - `grep [pat] [f]`: Find lines matching a pattern in a file.
-- `touch [file]`: Create an empty file on RAM disk.
-- `mkdir [dir]`: Create a directory on RAM disk.
+- `touch [file]`: Create an empty file.
+- `mkdir [dir]`: Create a directory.
 - `cnode [file]`: Run the terminal text/code editor.
 - `date`: View current Real-Time Clock date and time.
 - `status`: Displays kernel operational metrics.

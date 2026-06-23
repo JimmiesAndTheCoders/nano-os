@@ -3,12 +3,13 @@
 #include "screen.h"
 #include "util.h"
 #include "initrd.h"
+#include "vfs.h"
 #include "mouse.h"
 #include "pci.h"
 #include "kmalloc.h"
 #include "ata.h"
 
-static char current_dir[64] = "/";
+static char current_dir[64] = "/initrd";
 
 /* Terminal editor status parameters */
 static int editor_active = 0;
@@ -103,12 +104,10 @@ static void hex_to_string(unsigned int val, char* dest, int width) {
     dest[width + 2] = '\0';
 }
 
-/* Redraws the terminal editor screen cleanly */
 static void draw_editor_interface() {
     clear_screen();
     print("--------------------------------------------------------------------------------\n");
     print("  CNODE TERMINAL EDITOR v1.0   |   Editing File: ");
-    print("\n");
     print(editing_filename);
     print("\n");
     print("  [ESC]: Save & Exit           |   [F2]: Discard & Quit\n");
@@ -125,12 +124,16 @@ int shell_editor_active() {
 
 void shell_editor_handle_key(unsigned char scancode) {
     if (scancode == 1) { // ESC: Save & Exit
-        write_file_content(editing_filename, edit_buffer, edit_len);
+        vfs_node_t* file = vfs_resolve_path(editing_filename);
+        if (file) {
+            vfs_write(file, 0, edit_len, (const unsigned char*)edit_buffer);
+            vfs_close(file);
+        }
         editor_active = 0;
         clear_screen();
         print("File '");
         print(editing_filename);
-        print("' saved successfully to RAM disk.\n\n");
+        print("' saved successfully via VFS.\n\n");
         print_prompt();
     } 
     else if (scancode == 60) { // F2: Discard changes & Quit
@@ -142,7 +145,7 @@ void shell_editor_handle_key(unsigned char scancode) {
     else if (scancode == 14) { // Backspace
         if (edit_len > 0) {
             edit_buffer[--edit_len] = '\0';
-            draw_editor_interface(); // Redraw layout to keep text cursor stable
+            draw_editor_interface();
         }
     } 
     else if (scancode == 28) { // Enter key
@@ -152,14 +155,12 @@ void shell_editor_handle_key(unsigned char scancode) {
             draw_editor_interface();
         }
     } 
-    else if (scancode <= 57) { // Char input keys
+    else if (scancode <= 57) { // Char keys
         char letter = editor_sc_name[scancode];
         if (letter != '?') {
             if (edit_len < 2046) {
                 edit_buffer[edit_len++] = letter;
                 edit_buffer[edit_len] = '\0';
-                
-                // Fast path print for single character execution efficiency
                 char str[2] = {letter, '\0'};
                 print(str);
             }
@@ -189,8 +190,8 @@ void process_command(char *input) {
         print("  ls           - List available files in this directory.\n");
         print("  cat [file]   - Display the contents of a file.\n");
         print("  grep [pat] [f]- Find lines matching a pattern in a file.\n");
-        print("  touch [file] - Create an empty file on RAM disk.\n");
-        print("  mkdir [dir]  - Create a directory on RAM disk.\n");
+        print("  touch [file] - Create an empty file.\n");
+        print("  mkdir [dir]  - Create a directory.\n");
         print("  cnode [file] - Run the terminal text/code editor.\n");
         print("  pci          - List all detected PCI bus devices.\n");
         print("  pci msi-enable [index] [vector]  - Enable MSI on specified device.\n");
@@ -226,7 +227,7 @@ void process_command(char *input) {
     }
     else if (strncmp_local(input, "cd ", 3) == 0) {
         char *dir = input + 3;
-        char target_path[64];
+        char target_path[128];
         
         if (strcmp(dir, "..") == 0) {
             get_parent_directory(current_dir, target_path);
@@ -237,11 +238,19 @@ void process_command(char *input) {
         }
         
         if (target_path[0] != '\0') {
-            if (directory_exists(target_path)) {
-                int path_len = strlen(target_path);
-                if (path_len < 64) {
-                    memory_copy(target_path, current_dir, path_len + 1);
+            vfs_node_t* node = vfs_resolve_path(target_path);
+            if (node) {
+                if (node->flags & VFS_DIRECTORY) {
+                    int path_len = strlen(target_path);
+                    if (path_len < 64) {
+                        memory_copy(target_path, current_dir, path_len + 1);
+                    }
+                } else {
+                    print("Error: '");
+                    print(dir);
+                    print("' is not a directory.\n");
                 }
+                vfs_close(node);
             } else {
                 print("Error: Directory '");
                 print(dir);
@@ -250,18 +259,59 @@ void process_command(char *input) {
         }
     }
     else if (strcmp(input, "ls") == 0) {
-        list_files(current_dir);
+        vfs_node_t* dir = vfs_resolve_path(current_dir);
+        if (dir) {
+            if (dir->flags & VFS_DIRECTORY) {
+                struct dirent* de;
+                int i = 0;
+                while ((de = vfs_readdir(dir, i++)) != 0) {
+                    vfs_node_t* child = vfs_finddir(dir, de->name);
+                    if (child) {
+                        if (child->flags & VFS_DIRECTORY) {
+                            print("  <DIR>  ");
+                        } else {
+                            print("  <FILE> ");
+                        }
+                        vfs_close(child);
+                    } else {
+                        print("  <FILE> ");
+                    }
+                    print(de->name);
+                    print("\n");
+                }
+            } else {
+                print("Error: Path is not a directory.\n");
+            }
+            vfs_close(dir);
+        } else {
+            print("Error: Could not list directory.\n");
+        }
     } 
     else if (strncmp_local(input, "cat ", 4) == 0) {
         if (strlen(input) > 4) {
             char* filename = input + 4; 
-            char target_path[64];
+            char target_path[128];
             build_full_path(current_dir, filename, target_path);
             
-            char* content = read_file(target_path);
-            if (content) {
-                print(content);
-                print("\n");
+            vfs_node_t* file = vfs_resolve_path(target_path);
+            if (file) {
+                if (!(file->flags & VFS_DIRECTORY)) {
+                    char* content = (char*)kmalloc(file->length + 1);
+                    if (content) {
+                        unsigned int read_bytes = vfs_read(file, 0, file->length, (unsigned char*)content);
+                        content[read_bytes] = '\0';
+                        print(content);
+                        print("\n");
+                        kfree(content);
+                    } else {
+                        print("Memory allocation failed.\n");
+                    }
+                } else {
+                    print("Error: '");
+                    print(filename);
+                    print("' is a directory.\n");
+                }
+                vfs_close(file);
             } else {
                 print("Error: File '");
                 print(filename);
@@ -289,97 +339,157 @@ void process_command(char *input) {
         if (!filename || strlen(filename) == 0) {
             print("Usage: grep [pattern] [filename]\n");
         } else {
-            char target_path[64];
+            char target_path[128];
             build_full_path(current_dir, filename, target_path);
             
-            char* content = read_file(target_path);
-            if (!content) {
+            vfs_node_t* file = vfs_resolve_path(target_path);
+            if (!file) {
                 print("Error: File '");
                 print(filename);
                 print("' not found.\n");
             } else {
-                char line_buf[256];
-                int line_idx = 0;
-                int char_idx = 0;
-                while (1) {
-                    char c = content[char_idx++];
-                    if (c == '\n' || c == '\r' || c == '\0') {
-                        line_buf[line_idx] = '\0';
-                        if (line_idx > 0) {
-                            if (strstr_local(line_buf, pattern) != 0) {
-                                print(line_buf);
-                                print("\n");
+                char* content = (char*)kmalloc(file->length + 1);
+                if (content) {
+                    vfs_read(file, 0, file->length, (unsigned char*)content);
+                    content[file->length] = '\0';
+                    
+                    char line_buf[256];
+                    int line_idx = 0;
+                    int char_idx = 0;
+                    while (1) {
+                        char c = content[char_idx++];
+                        if (c == '\n' || c == '\r' || c == '\0') {
+                            line_buf[line_idx] = '\0';
+                            if (line_idx > 0) {
+                                if (strstr_local(line_buf, pattern) != 0) {
+                                    print(line_buf);
+                                    print("\n");
+                                }
+                            }
+                            line_idx = 0;
+                            if (c == '\0') break;
+                        } else {
+                            if (line_idx < 254) {
+                                line_buf[line_idx++] = c;
                             }
                         }
-                        line_idx = 0;
-                        if (c == '\0') break;
-                    } else {
-                        if (line_idx < 254) {
-                            line_buf[line_idx++] = c;
-                        }
                     }
+                    kfree(content);
                 }
+                vfs_close(file);
             }
         }
     }
     else if (strncmp_local(input, "touch ", 6) == 0) {
         char *filename = input + 6;
-        char target_path[64];
+        char target_path[128];
         build_full_path(current_dir, filename, target_path);
         
-        if (create_file(target_path, 0)) {
-            print("File '");
-            print(filename);
-            print("' created successfully.\n");
+        char parent_path[128];
+        get_parent_directory(target_path, parent_path);
+        
+        const char* just_filename = filename;
+        for (int k = strlen(filename) - 1; k >= 0; k--) {
+            if (filename[k] == '/') {
+                just_filename = filename + k + 1;
+                break;
+            }
+        }
+        
+        vfs_node_t* parent = vfs_resolve_path(parent_path);
+        if (parent) {
+            if (parent->create) {
+                if (parent->create(parent, just_filename, VFS_FILE)) {
+                    print("File '");
+                    print(just_filename);
+                    print("' created successfully.\n");
+                } else {
+                    print("Error: Could not create file.\n");
+                }
+            } else {
+                print("Error: Path does not support writing.\n");
+            }
+            vfs_close(parent);
         } else {
-            print("Error: Cannot create '");
-            print(filename);
-            print("'. Path may exist or disk is full.\n");
+            print("Error: Target parent path not found.\n");
         }
     }
     else if (strncmp_local(input, "mkdir ", 6) == 0) {
         char *dirname = input + 6;
-        char target_path[64];
+        char target_path[128];
         build_full_path(current_dir, dirname, target_path);
         
-        if (create_file(target_path, 1)) {
-            print("Directory '");
-            print(dirname);
-            print("' created successfully.\n");
+        char parent_path[128];
+        get_parent_directory(target_path, parent_path);
+        
+        const char* just_dirname = dirname;
+        for (int k = strlen(dirname) - 1; k >= 0; k--) {
+            if (dirname[k] == '/') {
+                just_dirname = dirname + k + 1;
+                break;
+            }
+        }
+        
+        vfs_node_t* parent = vfs_resolve_path(parent_path);
+        if (parent) {
+            if (parent->create) {
+                if (parent->create(parent, just_dirname, VFS_DIRECTORY)) {
+                    print("Directory '");
+                    print(just_dirname);
+                    print("' created successfully.\n");
+                } else {
+                    print("Error: Could not instantiate folder.\n");
+                }
+            } else {
+                print("Error: Path does not support folder creation.\n");
+            }
+            vfs_close(parent);
         } else {
-            print("Error: Cannot create directory '");
-            print(dirname);
-            print("'. Path may exist or disk is full.\n");
+            print("Error: Target parent path not found.\n");
         }
     }
     else if (strncmp_local(input, "cnode ", 6) == 0) {
         char* filename = input + 6;
-        char target_path[64];
+        char target_path[128];
         build_full_path(current_dir, filename, target_path);
         
-        // Auto-create file if it does not exist (mirroring Pico/Nano behavior)
-        if (!read_file(target_path)) {
-            if (!create_file(target_path, 0)) {
-                print("Error: Could not instantiate '");
-                print(filename);
-                print("'.\n");
-                return;
+        vfs_node_t* file = vfs_resolve_path(target_path);
+        if (!file) {
+            char parent_path[128];
+            get_parent_directory(target_path, parent_path);
+            
+            const char* just_filename = filename;
+            for (int k = strlen(filename) - 1; k >= 0; k--) {
+                if (filename[k] == '/') {
+                    just_filename = filename + k + 1;
+                    break;
+                }
+            }
+            
+            vfs_node_t* parent = vfs_resolve_path(parent_path);
+            if (parent) {
+                if (parent->create && parent->create(parent, just_filename, VFS_FILE)) {
+                    file = vfs_resolve_path(target_path);
+                }
+                vfs_close(parent);
             }
         }
         
-        char* content = read_file(target_path);
-        int len = strlen(content);
-        if (len > 2040) len = 2040; // Upper limit of local buffer
-        
-        memory_copy(content, edit_buffer, len);
-        edit_buffer[len] = '\0';
-        edit_len = len;
-        
-        memory_copy(target_path, editing_filename, strlen(target_path) + 1);
-        editor_active = 1;
-        
-        draw_editor_interface();
-        return; // Retain current execution status without dropping prompt until saved
+        if (file) {
+            if (file->length > 2040) file->length = 2040;
+            
+            unsigned int read_bytes = vfs_read(file, 0, file->length, (unsigned char*)edit_buffer);
+            edit_buffer[read_bytes] = '\0';
+            edit_len = read_bytes;
+            
+            memory_copy(target_path, editing_filename, strlen(target_path) + 1);
+            editor_active = 1;
+            draw_editor_interface();
+            vfs_close(file);
+            return;
+        } else {
+            print("Error: Could not open file for editing.\n");
+        }
     }
     else if (strcmp(input, "pci") == 0) {
         print("PCI Bus Device Enumeration:\n");

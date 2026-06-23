@@ -3,6 +3,13 @@
 /* Forward declaration for the internal helper */
 static void reverse(char s[]);
 
+void memset(void *dest, unsigned char val, int count) {
+    unsigned char *temp = (unsigned char *)dest;
+    for (int i = 0; i < count; i++) {
+        temp[i] = val;
+    }
+}
+
 void memory_copy(const char *source, char *dest, int no_bytes) {
     for (int i = 0; i < no_bytes; i++) {
         dest[i] = source[i];

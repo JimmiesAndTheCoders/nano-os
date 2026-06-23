@@ -125,6 +125,10 @@ Check out [Nano Shell](nano_shell.md) for more information about this shell.
 
 > Note: We'll be adding more commands in the future, so stay tuned!
 
+## Release
+
+Check out [Releases](RELEASE.md) for all releases and updates about the OS.
+
 ## Documentation
 
 For detailed technical specifications of the operating system internals, please refer to the following documentation files:
