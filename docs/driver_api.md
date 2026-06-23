@@ -73,3 +73,13 @@ Devices supporting MSI or MSI-X can trigger interrupts by issuing direct memory 
 - `int pci_disable_msi(pci_device_t* dev)`: Disables the device's MSI transmission mechanism.
 - `int pci_enable_msix(pci_device_t* dev, unsigned char vector, unsigned int index)`: Discovers MMIO table offsets, links the target vector to the dynamic BAR memory map, and triggers the configured interrupt payload.
 - `int pci_disable_msix(pci_device_t* dev)`: Disables the device's MSI-X state parameters.
+
+## 7. Real-Time Clock (RTC) / CMOS Driver
+The RTC driver (`rtc.c`) accesses the PC's non-volatile CMOS configuration registers to retrieve UTC metrics.
+
+- **Ports**: Writes register addresses to Port `0x70` and reads the respective data on Port `0x71`.
+- **Consistency Protection**: Utilizes consecutive identical readings to ignore transition state updates.
+- **Data Normalization**: Handles both binary and BCD clock models, correcting 12-hour values into standard 24-hour patterns.
+
+**Core API:**
+- `void rtc_get_time(rtc_time_t *time)`: Fills a structure with the current normalized hardware second, minute, hour, day, month, and year values.

@@ -2,8 +2,9 @@
 #include "screen.h"
 #include "initrd.h"
 #include "timer.h"
+#include "rtc.h"
 
-static void *syscalls[4];
+static void *syscalls[5]; // Update size limit boundary representation
 
 unsigned int syscall_handler(registers_t *regs) {
     if (regs->eax == SYS_PRINT) {
@@ -19,6 +20,12 @@ unsigned int syscall_handler(registers_t *regs) {
     }
     else if (regs->eax == SYS_GET_TICKS) {
         regs->eax = timer_get_ticks();
+    }
+    else if (regs->eax == SYS_GET_TIME) {
+        rtc_time_t *out_time = (rtc_time_t*)regs->ebx;
+        if (out_time) {
+            rtc_get_time(out_time);
+        }
     }
     return (unsigned int)regs;
 }

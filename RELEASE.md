@@ -48,6 +48,11 @@ Added feature:
 - Setup of Local APIC MSR registers to trap signaled vectors.
 - Interactive terminal subcommands enabling control of MSI modes.
 
+## Version 1.5.0
+
+Added feature:
+- A Real-Time Clock (RTC) / CMOS driver for accurate system time tracking.
+
 <br>
 
 Nano OS is now built using an automated pipeline via GitHub Actions.

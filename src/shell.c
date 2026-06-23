@@ -1,3 +1,4 @@
+#include "rtc.h"
 #include "shell.h"
 #include "screen.h"
 #include "util.h"
@@ -194,6 +195,7 @@ void process_command(char *input) {
         print("  pci msi-disable [index]          - Disable MSI on specified device.\n");
         print("  pci msix-enable [index] [vector] - Enable MSI-X on specified device.\n");
         print("  pci msix-disable [index]         - Disable MSI-X on specified device.\n");
+        print("  date         - View current Real-Time Clock date and time.\n");
         print("  status       - Inspect system operational metrics.\n");
         print("  nano --status- Execute system mascot configuration check.\n");
         print("  halt         - Safely power down the hardware processor.\n");
@@ -542,6 +544,23 @@ void process_command(char *input) {
                 print("Error: MSI-X disable failed or unsupported.\n");
             }
         }
+    }
+    else if (strcmp(input, "date") == 0) {
+        rtc_time_t t;
+        rtc_get_time(&t);
+        
+        char buf[16];
+        itoa(t.year, buf); print(buf); print("-");
+        if (t.month < 10) print("0");
+        itoa(t.month, buf); print(buf); print("-");
+        if (t.day < 10) print("0");
+        itoa(t.day, buf); print(buf); print(" ");
+        if (t.hour < 10) print("0");
+        itoa(t.hour, buf); print(buf); print(":");
+        if (t.minute < 10) print("0");
+        itoa(t.minute, buf); print(buf); print(":");
+        if (t.second < 10) print("0");
+        itoa(t.second, buf); print(buf); print("\n");
     }
     else if (strcmp(input, "status") == 0) {
         print("Nano OS System Status:\n");

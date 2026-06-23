@@ -1,6 +1,7 @@
 #include "vga_screen.hpp"
 
 extern "C" {
+    #include "rtc.h"
     #include "screen.h"
     #include "cpu.h"
     #include "keyboard.h"
@@ -47,7 +48,7 @@ void background_worker_task() {
 
 void user_mode_task() {
     for (volatile int i = 0; i < 50000000; i++); 
-    nano_print((char*)"\n[User Task] Executing safely in Ring 3 user-space!\nnano> ");
+    nano_print((char*)"\n[User Task] Executing safely in Ring 3 user-space!\nnano:/> ");
     while(1) {}
 }
 
@@ -108,6 +109,24 @@ extern "C" void kernel_main() {
     print("[OK] PCI Bus Enumerator successfully initialized\n");
     print("[OK] Local APIC mapped and configured for MSI transport\n");
     
+    // Read the accurate system time on startup
+    rtc_time_t boot_time;
+    rtc_get_time(&boot_time);
+    print("[OK] Real-Time Clock (RTC) initialized. System Time: ");
+    
+    char buf[16];
+    itoa(boot_time.year, buf); print(buf); print("-");
+    if (boot_time.month < 10) print("0");
+    itoa(boot_time.month, buf); print(buf); print("-");
+    if (boot_time.day < 10) print("0");
+    itoa(boot_time.day, buf); print(buf); print(" ");
+    if (boot_time.hour < 10) print("0");
+    itoa(boot_time.hour, buf); print(buf); print(":");
+    if (boot_time.minute < 10) print("0");
+    itoa(boot_time.minute, buf); print(buf); print(":");
+    if (boot_time.second < 10) print("0");
+    itoa(boot_time.second, buf); print(buf); print("\n");
+
     if (vbe->width > 0) {
         print("[OK] VESA VBE High-Resolution GUI Enabled!\n");
     } else {

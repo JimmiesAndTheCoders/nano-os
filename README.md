@@ -139,6 +139,7 @@ Once booted, interact with the system using the following commands:
     - `msi-disable [index]`: Disable MSI on specified device.
     - `msix-enable [index] [vector]`: Enable MSI on specified device.
     - `msi-disable [index]`: Disable MSI on specified device.
+- `date`: View current Real-Time Clock date and time.
 - `status`: Displays kernel operational metrics.
 - `nano --status`: View system mascot information.
 - `halt`: Safely stops the CPU.

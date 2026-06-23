@@ -43,8 +43,8 @@ MAKE_INITRD = $(BUILD_DIR)/make_initrd$(HOST_EXE)
 TEST_BIN    = $(BUILD_DIR)/test_util$(HOST_EXE)
 
 # Compiler flags
-CFLAGS      = -ffreestanding -fno-pie -fno-stack-protector -nostdlib -I$(INC_DIR)
-CPPFLAGS    = -ffreestanding -O2 -Wall -Wextra -fno-exceptions -fno-rtti -I$(INC_DIR)
+CFLAGS      = -ffreestanding -fno-pic -fno-pie -fno-stack-protector -nostdlib -I$(INC_DIR)
+CPPFLAGS    = -ffreestanding -fno-pic -fno-pie -O2 -Wall -Wextra -fno-exceptions -fno-rtti -I$(INC_DIR)
 HOST_CFLAGS = -I$(INC_DIR) -Wall -Wextra -g -fno-builtin
 
 # Find all C and C++ sources

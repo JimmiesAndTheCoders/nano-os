@@ -8,9 +8,9 @@
 #define SYS_READ_FILE  1
 #define SYS_LIST_FILES 2
 #define SYS_GET_TICKS  3
+#define SYS_GET_TIME   4
 
 void init_syscalls();
-// Change this from void to unsigned int
 unsigned int syscall_handler(registers_t *regs);
 
 #endif
