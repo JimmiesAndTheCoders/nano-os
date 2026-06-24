@@ -8,6 +8,7 @@
 #include "pci.h"
 #include "kmalloc.h"
 #include "ata.h"
+#include "cache.h"
 
 static char current_dir[64] = "/";
 
@@ -204,6 +205,8 @@ void process_command(char *input) {
         print("  ata-dma-read [lba] [count]       - Read sectors using DMA.\n");
         print("  ata-dma-write [lba] [text]       - Write text to sector using DMA.\n");
         print("  date         - View current Real-Time Clock date and time.\n");
+        print("  sync         - Flush all dirty pages and blocks to disk.\n");
+        print("  cache-stats  - View system page and buffer cache statistics.\n");
         print("  status       - Inspect system operational metrics.\n");
         print("  nano --status- Execute system mascot configuration check.\n");
         print("  halt         - Safely power down the hardware processor.\n");
@@ -844,6 +847,28 @@ void process_command(char *input) {
         itoa(t.minute, buf); print(buf); print(":");
         if (t.second < 10) print("0");
         itoa(t.second, buf); print(buf); print("\n");
+    }
+    else if (strcmp(input, "sync") == 0) {
+        print("Flushing caches...\n");
+        page_cache_flush_all();
+        buffer_cache_flush();
+        print("Caches successfully synced to disk.\n");
+    }
+    else if (strcmp(input, "cache-stats") == 0) {
+        cache_stats_t stats = cache_get_stats();
+        print("Unified Page & Buffer Cache Statistics:\n");
+        print("---------------------------------------\n");
+        
+        char buf[32];
+        print("Block Cache Reads        : "); itoa(stats.block_reads, buf); print(buf); print("\n");
+        print("Block Cache Read Hits    : "); itoa(stats.block_read_hits, buf); print(buf); print("\n");
+        print("Block Cache Writes       : "); itoa(stats.block_writes, buf); print(buf); print("\n");
+        print("Block Cache Write Hits   : "); itoa(stats.block_write_hits, buf); print(buf); print("\n");
+        print("\n");
+        print("Page Cache Reads         : "); itoa(stats.page_reads, buf); print(buf); print("\n");
+        print("Page Cache Read Hits     : "); itoa(stats.page_read_hits, buf); print(buf); print("\n");
+        print("Page Cache Writes        : "); itoa(stats.page_writes, buf); print(buf); print("\n");
+        print("Page Cache Write Hits    : "); itoa(stats.page_write_hits, buf); print(buf); print("\n");
     }
     else if (strcmp(input, "status") == 0) {
         print("Nano OS System Status:\n");

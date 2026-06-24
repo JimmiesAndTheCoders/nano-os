@@ -73,6 +73,11 @@ Added feature:
 - A FAT32 driver (MBR parsing, Boot sector, FAT tables, clusters, and Long File Names).
 - An Ext2 file system driver (Superblock, block groups, inodes, directory parsing).
 
+## Version 1.9.0
+
+Added feature:
+- A page cache and buffer cache mechanism to optimize disk read/write operations.
+
 <br>
 
 Nano OS is now built using an automated pipeline via GitHub Actions.

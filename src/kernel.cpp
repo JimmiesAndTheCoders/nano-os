@@ -22,6 +22,7 @@ extern "C" {
     #include "vbe.h"
     #include "pci.h"
     #include "ata.h"
+    #include "cache.h"
     
     void call_global_constructors();
 }
@@ -78,6 +79,7 @@ extern "C" void kernel_main() {
     init_lapic();
     init_apic_timer(100);            // Upgrade system timer tick to Local APIC Timer
     init_ata();
+    init_cache();
 
     // VFS & Mount Initialisation
     init_vfs();

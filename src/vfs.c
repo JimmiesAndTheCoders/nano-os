@@ -2,6 +2,7 @@
 #include "kmalloc.h"
 #include "util.h"
 #include "screen.h"
+#include "cache.h"
 
 #define MAX_MOUNTS 16
 
@@ -71,14 +72,11 @@ vfs_node_t* vfs_clone(vfs_node_t* node) {
     return clone;
 }
 
-void vfs_close(vfs_node_t* node) {
-    if (node && node != vfs_root && node->flags != VFS_MOUNTPOINT) {
-        kfree(node);
-    }
-}
-
 unsigned int vfs_read(vfs_node_t* node, unsigned int offset, unsigned int size, unsigned char* buffer) {
     if (node && node->read) {
+        if (node->flags == VFS_FILE) {
+            return page_cache_read(node, offset, size, buffer);
+        }
         return node->read(node, offset, size, buffer);
     }
     return 0;
@@ -86,9 +84,23 @@ unsigned int vfs_read(vfs_node_t* node, unsigned int offset, unsigned int size, 
 
 unsigned int vfs_write(vfs_node_t* node, unsigned int offset, unsigned int size, const unsigned char* buffer) {
     if (node && node->write) {
+        if (node->flags == VFS_FILE) {
+            return page_cache_write(node, offset, size, buffer);
+        }
         return node->write(node, offset, size, buffer);
     }
     return 0;
+}
+
+void vfs_close(vfs_node_t* node) {
+    if (node) {
+        if (node->flags == VFS_FILE) {
+            page_cache_flush_node(node);
+        }
+        if (node != vfs_root && node->flags != VFS_MOUNTPOINT) {
+            kfree(node);
+        }
+    }
 }
 
 void vfs_open(vfs_node_t* node) {

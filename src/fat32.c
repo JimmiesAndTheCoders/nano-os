@@ -3,6 +3,7 @@
 #include "kmalloc.h"
 #include "util.h"
 #include "screen.h"
+#include "cache.h"
 
 static unsigned int partition_start_lba = 0;
 static unsigned int partition_sector_count = 0;
@@ -19,19 +20,11 @@ static int strncmp_local(const char *s1, const char *s2, int n) {
 }
 
 static int fat32_read_sectors(unsigned int lba, unsigned int count, unsigned char* buffer) {
-    if (ata_has_dma()) {
-        return ata_read_dma(ATA_PRIMARY_IO, ATA_DRIVE_MASTER, lba, count, (unsigned short*)buffer);
-    } else {
-        return ata_read_pio(ATA_PRIMARY_IO, ATA_DRIVE_MASTER, lba, count, (unsigned short*)buffer);
-    }
+    return buffer_cache_read_sectors(lba, count, buffer);
 }
 
 static int fat32_write_sectors(unsigned int lba, unsigned int count, const unsigned char* buffer) {
-    if (ata_has_dma()) {
-        return ata_write_dma(ATA_PRIMARY_IO, ATA_DRIVE_MASTER, lba, count, (const unsigned short*)buffer);
-    } else {
-        return ata_write_pio(ATA_PRIMARY_IO, ATA_DRIVE_MASTER, lba, count, (const unsigned short*)buffer);
-    }
+    return buffer_cache_write_sectors(lba, count, buffer);
 }
 
 static unsigned int fat_lba() {

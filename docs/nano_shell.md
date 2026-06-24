@@ -16,6 +16,8 @@ Once booted, interact with the system using the following commands:
 - `mkdir [dir]`: Create a directory.
 - `cnode [file]`: Run the terminal text/code editor.
 - `date`: View current Real-Time Clock date and time.
+- `sync`: Flush all dirty pages and blocks to disk.
+- `cache-stats`: View system page and buffer cache statistics.
 - `status`: Displays kernel operational metrics.
 - `nano --status`: View system mascot information.
 - `halt`: Safely stops the CPU.
