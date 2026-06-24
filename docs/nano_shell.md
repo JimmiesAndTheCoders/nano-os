@@ -15,6 +15,8 @@ Once booted, interact with the system using the following commands:
 - `touch [file]`: Create an empty file.
 - `mkdir [dir]`: Create a directory.
 - `exec [file]`  : Load and execute an ELF user executable.
+- `ps`: List all running processes.
+- `kill [p] [s]`: Send a signal to a process (default SIGTERM).
 - `cnode [file]`: Run the terminal text/code editor.
 - `date`: View current Real-Time Clock date and time.
 - `sync`: Flush all dirty pages and blocks to disk.

@@ -18,4 +18,8 @@ static inline void nano_get_time(rtc_time_t* t) {
     __asm__ __volatile__ ("int $0x80" : : "a"(SYS_GET_TIME), "b"(t));
 }
 
+static inline void nano_kill(int pid, int sig) {
+    __asm__ __volatile__ ("int $0x80" : : "a"(SYS_KILL), "b"(pid), "c"(sig));
+}
+
 #endif

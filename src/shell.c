@@ -10,6 +10,7 @@
 #include "kmalloc.h"
 #include "ata.h"
 #include "cache.h"
+#include "task.h"
 
 static char current_dir[64] = "/";
 
@@ -196,6 +197,8 @@ void process_command(char *input) {
         print("  mkdir [dir]  - Create a directory.\n");
         print("  cnode [file] - Run the terminal text/code editor.\n");
         print("  exec [file]  - Load and run an ELF user executable.\n");
+        print("  ps           - List all running processes.\n");
+        print("  kill [p] [s] - Send a signal to a process (default SIGTERM).\n");
         print("  pci          - List all detected PCI bus devices.\n");
         print("  pci msi-enable [index] [vector]  - Enable MSI on specified device.\n");
         print("  pci msi-disable [index]          - Disable MSI on specified device.\n");
@@ -539,6 +542,33 @@ void process_command(char *input) {
         } else {
             print("Usage: exec [filename] [args...]\n");
         }
+    }
+    else if (strcmp(input, "ps") == 0) {
+        task_list();
+    }
+    else if (strncmp_local(input, "kill ", 5) == 0) {
+        char* args = input + 5;
+        int pid = 0, sig = 15; // default SIGTERM
+        int i = 0;
+        while (args[i] >= '0' && args[i] <= '9') {
+            pid = pid * 10 + (args[i] - '0');
+            i++;
+        }
+        if (args[i] == ' ') {
+            i++;
+            sig = 0;
+            while (args[i] >= '0' && args[i] <= '9') {
+                sig = sig * 10 + (args[i] - '0');
+                i++;
+            }
+        }
+        
+        task_signal(pid, sig);
+        print("Signal sent to PID ");
+        char pid_str[16];
+        itoa(pid, pid_str);
+        print(pid_str);
+        print(".\n");
     }
     else if (strcmp(input, "pci") == 0) {
         print("PCI Bus Device Enumeration:\n");

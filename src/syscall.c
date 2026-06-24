@@ -3,6 +3,7 @@
 #include "initrd.h"
 #include "timer.h"
 #include "rtc.h"
+#include "task.h"
 
 static void *syscalls[5]; // Update size limit boundary representation
 
@@ -26,6 +27,11 @@ unsigned int syscall_handler(registers_t *regs) {
         if (out_time) {
             rtc_get_time(out_time);
         }
+    }
+    else if (regs->eax == SYS_KILL) {
+        int pid = (int)regs->ebx;
+        int sig = (int)regs->ecx;
+        task_signal(pid, sig);
     }
     return (unsigned int)regs;
 }

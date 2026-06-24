@@ -110,7 +110,12 @@ Added feature:
 Added feature:
 - A dynamic linking support for shared libraries (.so files), and pass environment variables and command-line arguments (argc/argv) to user programs.
 
-##
+## Version 1.12.0
+
+### Date: 2026-06-24
+
+Added feature:
+- Unix-like Signals for basic process control (e.g., SIGKILL, SIGINT).
 
 <br>
 

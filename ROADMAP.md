@@ -38,7 +38,7 @@ Phase 2: Core Subsystems & Persistent Storage
 - [X] Add an ELF binary parser to dynamically load, map, and execute user-space applications.
 - [X] Implement dynamic linking support for shared libraries (.so files).
 - [X] Pass environment variables and command-line arguments (argc/argv) to user programs.
-- [ ] Implement Unix-like Signals for basic process control (e.g., SIGKILL, SIGINT).
+- [X] Implement Unix-like Signals for basic process control (e.g., SIGKILL, SIGINT).
 - [ ] Implement Inter-Process Communication (IPC) via pipes, mailboxes, and shared memory (mmap).
 - [ ] Port a standard C library (libc) tailored to Nano OS system calls for user applications.
 
