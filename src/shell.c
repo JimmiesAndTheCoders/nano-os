@@ -1,3 +1,4 @@
+#include "elf.h"
 #include "rtc.h"
 #include "shell.h"
 #include "screen.h"
@@ -194,6 +195,7 @@ void process_command(char *input) {
         print("  touch [file] - Create an empty file.\n");
         print("  mkdir [dir]  - Create a directory.\n");
         print("  cnode [file] - Run the terminal text/code editor.\n");
+        print("  exec [file]  - Load and run an ELF user executable.\n");
         print("  pci          - List all detected PCI bus devices.\n");
         print("  pci msi-enable [index] [vector]  - Enable MSI on specified device.\n");
         print("  pci msi-disable [index]          - Disable MSI on specified device.\n");
@@ -492,6 +494,26 @@ void process_command(char *input) {
             return;
         } else {
             print("Error: Could not open file for editing.\n");
+        }
+    }
+    else if (strncmp_local(input, "exec ", 5) == 0) {
+        char* filename = input + 5;
+        char target_path[128];
+        build_full_path(current_dir, filename, target_path);
+
+        print("[SYS] Resolving target program process: ");
+        print(filename);
+        print("\n");
+
+        int status = elf_load_and_run(target_path, filename);
+        if (status == 0) {
+            print("[SYS] Task enqueued successfully in Ring 3 user-space.\n");
+        } else {
+            print("[SYS] ELF execution failure. Verification code: ");
+            char err_buf[16];
+            itoa(status, err_buf);
+            print(err_buf);
+            print("\n");
         }
     }
     else if (strcmp(input, "pci") == 0) {

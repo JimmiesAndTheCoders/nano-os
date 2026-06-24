@@ -78,6 +78,11 @@ Added feature:
 Added feature:
 - A page cache and buffer cache mechanism to optimize disk read/write operations.
 
+## Version 1.10.0
+
+Added feature:
+- An ELF binary parser to dynamically load, map, and execute user-space applications.
+
 <br>
 
 Nano OS is now built using an automated pipeline via GitHub Actions.

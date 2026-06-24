@@ -35,7 +35,7 @@ Phase 2: Core Subsystems & Persistent Storage
 - [X] Implement a FAT32 driver (MBR parsing, Boot sector, FAT tables, clusters, and Long File Names).
 - [X] Implement an Ext2 file system driver (Superblock, block groups, inodes, directory parsing).
 - [X] Build a page cache and buffer cache mechanism to optimize disk read/write operations.
-- [ ] Add an ELF binary parser to dynamically load, map, and execute user-space applications.
+- [X] Add an ELF binary parser to dynamically load, map, and execute user-space applications.
 - [ ] Implement dynamic linking support for shared libraries (.so files).
 - [ ] Pass environment variables and command-line arguments (argc/argv) to user programs.
 - [ ] Implement Unix-like Signals for basic process control (e.g., SIGKILL, SIGINT).

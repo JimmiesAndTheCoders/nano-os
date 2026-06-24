@@ -36,6 +36,7 @@ FULL_KERN   = $(BUILD_DIR)/full_kernel.bin
 RAW_IMG     = $(BUILD_DIR)/nano_os.img
 VDI_IMG     = nano_os.vdi
 INITRD_IMG  = $(BUILD_DIR)/initrd.img
+USER_ELF    = $(BUILD_DIR)/user_hello.elf
 TARGET_UUID = d74d67a5-9c49-432e-856f-503a1abae2d8
 
 # Host Tools and Tests
@@ -58,9 +59,13 @@ ALL_OBJS    = $(C_OBJS) $(CPP_OBJS)
 
 all: $(VDI_IMG)
 
-# Setup directories (MSYS2, Linux, and macOS all use a POSIX shell environment)
+# Setup directories
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
+
+# User Space Application Compilation
+$(USER_ELF): tests/user_hello.c | $(BUILD_DIR)
+	$(CC) -ffreestanding -fno-pic -fno-pie -nostdlib -m32 -Ttext 0x08048000 -e _start tests/user_hello.c -o $(USER_ELF)
 
 # Bootloader
 $(BOOT_BIN): boot.asm | $(BUILD_DIR)
@@ -85,11 +90,11 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
 $(MAKE_INITRD): $(TOOLS_DIR)/make_initrd.c | $(BUILD_DIR)
 	$(HOST_CC) $(TOOLS_DIR)/make_initrd.c -o $(MAKE_INITRD)
 
-# Generate the file system image
-$(INITRD_IMG): $(MAKE_INITRD) | $(BUILD_DIR)
+# Generate the file system image with packed ELF executable
+$(INITRD_IMG): $(MAKE_INITRD) $(USER_ELF) | $(BUILD_DIR)
 	@echo "Nano OS Initrd File System Successfully Mounted!" > $(BUILD_DIR)/test.txt
 	@echo "All systems operating within normal parameters." > $(BUILD_DIR)/status.txt
-	$(MAKE_INITRD) $(INITRD_IMG) $(BUILD_DIR)/test.txt $(BUILD_DIR)/status.txt
+	$(MAKE_INITRD) $(INITRD_IMG) $(BUILD_DIR)/test.txt $(BUILD_DIR)/status.txt $(USER_ELF)
 
 # Linking
 $(KERN_BIN): $(ENTRY_O) $(INTR_O) $(ALL_OBJS) linker.ld | $(BUILD_DIR)

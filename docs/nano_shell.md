@@ -14,6 +14,7 @@ Once booted, interact with the system using the following commands:
 - `grep [pat] [f]`: Find lines matching a pattern in a file.
 - `touch [file]`: Create an empty file.
 - `mkdir [dir]`: Create a directory.
+- `exec [file]`  : Load and execute an ELF user executable.
 - `cnode [file]`: Run the terminal text/code editor.
 - `date`: View current Real-Time Clock date and time.
 - `sync`: Flush all dirty pages and blocks to disk.

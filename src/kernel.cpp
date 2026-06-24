@@ -21,8 +21,8 @@ extern "C" {
     #include "graphics.h"
     #include "vbe.h"
     #include "pci.h"
-    #include "ata.h"
     #include "cache.h"
+    #include "ata.h"
     
     void call_global_constructors();
 }
