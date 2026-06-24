@@ -18,9 +18,13 @@ We are thrilled to announce the completion of Phase 1 of Nano OS! This release r
 
 ## Version 1.1.0
 
+### Date: 2026-06-23
+
 Added the mouse track on status.
 
 ## Version 1.2.0
+
+### Date: 2026-06-23
 
 Added commands:
 
@@ -34,6 +38,8 @@ Added commands:
 
 ## Version 1.3.0
 
+### Date: 2026-06-23
+
 Added feature:
 - A PCI bus enumerator to detect, parse configuration spaces, and configure hardware
 
@@ -41,6 +47,8 @@ Added command:
 - `pci`
 
 ## Version 1.4.0
+
+### Date: 2026-06-23
 
 Added feature:
 - Support for MSI and MSI-X (Message Signaled Interrupts) in the PCI driver.
@@ -50,10 +58,14 @@ Added feature:
 
 ## Version 1.5.0
 
+### Date: 2026-06-23
+
 Added feature:
 - A Real-Time Clock (RTC) / CMOS driver for accurate system time tracking.
 
 ## Version 1.6.0
+
+### Date: 2026-06-23
 
 Added feature:
 - Upgraded legacy system timer to a dynamically calibrated Local APIC (LAPIC) Timer.
@@ -62,6 +74,8 @@ Added feature:
 
 ## Version 1.7.0
 
+### Date: 2026-06-23
+
 Added feature:
 - Developed an ATA/IDE PIO disk driver to support raw read, write, and identify diagnostics on storage drives.
 - Upgraded the storage layer to support Bus Master IDE DMA with physical descriptor tables and page-aligned BSS bounce buffer structures.
@@ -69,19 +83,27 @@ Added feature:
 
 ## Version 1.8.0
 
+### Date: 2026-06-23
+
 Added feature:
 - A FAT32 driver (MBR parsing, Boot sector, FAT tables, clusters, and Long File Names).
 - An Ext2 file system driver (Superblock, block groups, inodes, directory parsing).
 
 ## Version 1.9.0
 
+### Date: 2026-06-24
+
 Added feature:
 - A page cache and buffer cache mechanism to optimize disk read/write operations.
 
 ## Version 1.10.0
 
+### Date: 2026-06-24
+
 Added feature:
-- An ELF binary parser to dynamically load, map, and execute user-space applications.
+- An ELF binary parser to dynamically load, map, and execute user-space applications, and pass environment variables and command-line arguments (argc/argv) to user programs.
+
+##
 
 <br>
 

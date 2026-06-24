@@ -497,23 +497,47 @@ void process_command(char *input) {
         }
     }
     else if (strncmp_local(input, "exec ", 5) == 0) {
-        char* filename = input + 5;
-        char target_path[128];
-        build_full_path(current_dir, filename, target_path);
+        char* args = input + 5;
+        char* argv[16];
+        int argc = 0;
+        
+        // Simple spaces tokenizer to format arguments into ArgV elements
+        char* token = args;
+        while (*token) {
+            while (*token == ' ') token++;
+            if (!*token) break;
+            argv[argc++] = token;
+            while (*token && *token != ' ') token++;
+            if (*token == ' ') {
+                *token = '\0';
+                token++;
+            }
+        }
+        
+        if (argc > 0) {
+            char target_path[128];
+            build_full_path(current_dir, argv[0], target_path);
 
-        print("[SYS] Resolving target program process: ");
-        print(filename);
-        print("\n");
+            // Seed environmental variables array mimicking standard system setups
+            char* envp[] = {"OS=NanoOS", "USER=root", "PATH=/"};
+            int envc = 3;
 
-        int status = elf_load_and_run(target_path, filename);
-        if (status == 0) {
-            print("[SYS] Task enqueued successfully in Ring 3 user-space.\n");
-        } else {
-            print("[SYS] ELF execution failure. Verification code: ");
-            char err_buf[16];
-            itoa(status, err_buf);
-            print(err_buf);
+            print("[SYS] Executing process: ");
+            print(target_path);
             print("\n");
+
+            int status = elf_load_and_run(target_path, argv[0], argc, argv, envc, envp);
+            if (status == 0) {
+                print("[SYS] Task enqueued successfully in Ring 3 user-space.\n");
+            } else {
+                print("[SYS] ELF execution failure. Verification code: ");
+                char err_buf[16];
+                itoa(status, err_buf);
+                print(err_buf);
+                print("\n");
+            }
+        } else {
+            print("Usage: exec [filename] [args...]\n");
         }
     }
     else if (strcmp(input, "pci") == 0) {

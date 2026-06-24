@@ -36,8 +36,8 @@ Phase 2: Core Subsystems & Persistent Storage
 - [X] Implement an Ext2 file system driver (Superblock, block groups, inodes, directory parsing).
 - [X] Build a page cache and buffer cache mechanism to optimize disk read/write operations.
 - [X] Add an ELF binary parser to dynamically load, map, and execute user-space applications.
-- [ ] Implement dynamic linking support for shared libraries (.so files).
-- [ ] Pass environment variables and command-line arguments (argc/argv) to user programs.
+- [X] Implement dynamic linking support for shared libraries (.so files).
+- [X] Pass environment variables and command-line arguments (argc/argv) to user programs.
 - [ ] Implement Unix-like Signals for basic process control (e.g., SIGKILL, SIGINT).
 - [ ] Implement Inter-Process Communication (IPC) via pipes, mailboxes, and shared memory (mmap).
 - [ ] Port a standard C library (libc) tailored to Nano OS system calls for user applications.
