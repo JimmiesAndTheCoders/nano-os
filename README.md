@@ -121,7 +121,7 @@ bochs -f bochsrc
 
 ## Using Nano Shell
 
-Check out [Nano Shell](nano_shell.md) for more information about this shell.
+Check out [Nano Shell](docs/nano_shell.md) for more information about this shell.
 
 > Note: We'll be adding more commands in the future, so stay tuned!
 
