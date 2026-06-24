@@ -101,7 +101,7 @@ Added feature:
 ### Date: 2026-06-24
 
 Added feature:
-- An ELF binary parser to dynamically load, map, and execute user-space applications, and pass environment variables and command-line arguments (argc/argv) to user programs.
+- An ELF binary parser to dynamically load, map, and execute user-space applications.
 
 ## Version 1.11.0
 
