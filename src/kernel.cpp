@@ -23,6 +23,7 @@ extern "C" {
     #include "pci.h"
     #include "cache.h"
     #include "ata.h"
+    #include "ipc.h"
     
     void call_global_constructors();
 }
@@ -71,19 +72,23 @@ extern "C" void kernel_main() {
     pmm_reserve_region(0x300000, 0x20000); 
     init_initrd(0x30000);           
     init_syscalls();                 
-    init_timer(100);                 // Start legacy PIT initially
+    init_timer(100);                 
     init_tasking();                  
     init_keyboard();
     init_mouse();
     init_pci();
     init_lapic();
-    init_apic_timer(100);            // Upgrade system timer tick to Local APIC Timer
+    init_apic_timer(100);            
     init_ata();
     init_cache();
 
     // VFS & Mount Initialisation
     init_vfs();
     vfs_root = init_initrd_vfs();
+
+    // Initialize IPC Tables and map the registry virtual disk
+    init_ipc();
+    vfs_mount("/ipc", ipc_get_vfs_root());
 
     int fat_status = init_fat32();
 
@@ -141,6 +146,7 @@ extern "C" void kernel_main() {
     // Report VFS status
     print("[OK] Virtual File System abstraction initialized\n");
     print("[OK] RAM disk cleanly mapped as the root filesystem (/)\n");
+    print("[OK] IPC Virtual Filesystem cleanly mounted at /ipc\n"); // <-- Report IPC mount
     
     if (fat_status == 0) {
         vfs_mount("/fat", fat32_get_vfs_root());

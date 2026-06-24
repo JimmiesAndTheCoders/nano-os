@@ -40,3 +40,10 @@ Once booted, interact with the system using the following commands:
 - `ata-write [lba] [text]`: Write text to sector using PIO.
 - `ata-dma-read [lba] [count]`: Read sectors using DMA.
 - `ata-dma-write [lba] [text]`: Write text to sector using DMA.
+
+## Inter-Process Communication (IPC)
+
+- `ipc-info`: View current status of IPC pipelines.
+- `ipc-write [f][t]`: Write data into an IPC node.
+- `ipc-read [f]`: Read data from an IPC node.
+- `ipc-demo`: Run multitasking programmatic IPC demo.

@@ -39,7 +39,7 @@ Phase 2: Core Subsystems & Persistent Storage
 - [X] Implement dynamic linking support for shared libraries (.so files).
 - [X] Pass environment variables and command-line arguments (argc/argv) to user programs.
 - [X] Implement Unix-like Signals for basic process control (e.g., SIGKILL, SIGINT).
-- [ ] Implement Inter-Process Communication (IPC) via pipes, mailboxes, and shared memory (mmap).
+- [X] Implement Inter-Process Communication (IPC) via pipes, mailboxes, and shared memory (mmap).
 - [ ] Port a standard C library (libc) tailored to Nano OS system calls for user applications.
 
 Phase 3: Desktop Environment & Windowing

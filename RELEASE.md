@@ -117,6 +117,17 @@ Added feature:
 Added feature:
 - Unix-like Signals for basic process control (e.g., SIGKILL, SIGINT).
 
+## Version 1.13.0
+
+### Date: 2026-06-25
+
+Added feature:
+- Inter-Process Communication (IPC) subsystem.
+- Dynamic pipes backed by ring buffers, message queue-driven mailboxes, and page-aligned shared memory segments.
+- Mountable virtual filesystem mapping these structures directly to `/ipc/` for shell operations.
+- Dynamic system calls for programmatic context exchanges between processes.
+- Context execution test command `ipc-demo` to inspect concurrent IPC transfers.
+
 <br>
 
 Nano OS is now built using an automated pipeline via GitHub Actions.

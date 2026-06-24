@@ -11,6 +11,13 @@
 #define SYS_GET_TIME   4
 #define SYS_KILL       5
 
+#define SYS_PIPE_CREATE 6
+#define SYS_PIPE_READ   7
+#define SYS_PIPE_WRITE  8
+#define SYS_MBOX_SEND   9
+#define SYS_MBOX_RECV   10
+#define SYS_SHM_AT      12
+
 void init_syscalls();
 unsigned int syscall_handler(registers_t *regs);
 

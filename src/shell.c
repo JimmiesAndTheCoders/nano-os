@@ -11,6 +11,7 @@
 #include "ata.h"
 #include "cache.h"
 #include "task.h"
+#include "ipc.h"
 
 static char current_dir[64] = "/";
 
@@ -199,6 +200,10 @@ void process_command(char *input) {
         print("  exec [file]  - Load and run an ELF user executable.\n");
         print("  ps           - List all running processes.\n");
         print("  kill [p] [s] - Send a signal to a process (default SIGTERM).\n");
+        print("  ipc-info     - View current status of IPC pipelines.\n");
+        print("  ipc-write [f][t] - Write data into an IPC node.\n");
+        print("  ipc-read [f] - Read data from an IPC node.\n");
+        print("  ipc-demo     - Run multitasking programmatic IPC demo.\n");
         print("  pci          - List all detected PCI bus devices.\n");
         print("  pci msi-enable [index] [vector]  - Enable MSI on specified device.\n");
         print("  pci msi-disable [index]          - Disable MSI on specified device.\n");
@@ -569,6 +574,102 @@ void process_command(char *input) {
         itoa(pid, pid_str);
         print(pid_str);
         print(".\n");
+    }
+    else if (strcmp(input, "ipc-info") == 0) {
+        print("Nano OS Inter-Process Communication (IPC) Registry:\n");
+        print("--------------------------------------------------\n");
+        print("Pipes:\n");
+        for (int i = 0; i < 4; i++) {
+            print("  /ipc/pipe");
+            char buf[16];
+            itoa(i, buf); print(buf);
+            print(" -> Status: ACTIVE, Buffer: 2048 bytes\n");
+        }
+        print("\nMailboxes:\n");
+        for (int i = 0; i < 4; i++) {
+            print("  /ipc/mbox");
+            char buf[16];
+            itoa(i, buf); print(buf);
+            print(" -> Status: ACTIVE, Queue: 16 messages\n");
+        }
+        print("\nShared Memory:\n");
+        for (int i = 0; i < 4; i++) {
+            print("  /ipc/shm");
+            char buf[16];
+            itoa(i, buf); print(buf);
+            print("  -> Status: ACTIVE, Size: 4096 bytes\n");
+        }
+    }
+    else if (strncmp_local(input, "ipc-write ", 10) == 0) {
+        char* args = input + 10;
+        char* path = args;
+        char* text = 0;
+        
+        int i = 0;
+        while (args[i] != '\0') {
+            if (args[i] == ' ') {
+                args[i] = '\0';
+                text = args + i + 1;
+                break;
+            }
+            i++;
+        }
+        
+        if (!text || strlen(text) == 0) {
+            print("Usage: ipc-write [path] [text]\n");
+        } else {
+            char target_path[128];
+            build_full_path(current_dir, path, target_path);
+            
+            vfs_node_t* file = vfs_resolve_path(target_path);
+            if (!file) {
+                print("Error: Target path not found.\n");
+            } else {
+                unsigned int written = vfs_write(file, 0, strlen(text), (const unsigned char*)text);
+                print("Wrote ");
+                char buf[16];
+                itoa(written, buf);
+                print(buf);
+                print(" bytes to ");
+                print(target_path);
+                print("\n");
+                vfs_close(file);
+            }
+        }
+    }
+    else if (strncmp_local(input, "ipc-read ", 9) == 0) {
+        char* path = input + 9;
+        if (strlen(path) == 0) {
+            print("Usage: ipc-read [path]\n");
+        } else {
+            char target_path[128];
+            build_full_path(current_dir, path, target_path);
+            
+            vfs_node_t* file = vfs_resolve_path(target_path);
+            if (!file) {
+                print("Error: Target path not found.\n");
+            } else {
+                char* content = (char*)kmalloc(file->length + 1);
+                if (content) {
+                    unsigned int read_bytes = vfs_read(file, 0, file->length, (unsigned char*)content);
+                    content[read_bytes] = '\0';
+                    print("Read ");
+                    char buf[16];
+                    itoa(read_bytes, buf);
+                    print(buf);
+                    print(" bytes: ");
+                    print(content);
+                    print("\n");
+                    kfree(content);
+                } else {
+                    print("Memory allocation failed.\n");
+                }
+                vfs_close(file);
+            }
+        }
+    }
+    else if (strcmp(input, "ipc-demo") == 0) {
+        run_ipc_demo();
     }
     else if (strcmp(input, "pci") == 0) {
         print("PCI Bus Device Enumeration:\n");

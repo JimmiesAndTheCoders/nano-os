@@ -4,8 +4,7 @@
 #include "timer.h"
 #include "rtc.h"
 #include "task.h"
-
-static void *syscalls[5]; // Update size limit boundary representation
+#include "ipc.h"
 
 unsigned int syscall_handler(registers_t *regs) {
     if (regs->eax == SYS_PRINT) {
@@ -32,6 +31,24 @@ unsigned int syscall_handler(registers_t *regs) {
         int pid = (int)regs->ebx;
         int sig = (int)regs->ecx;
         task_signal(pid, sig);
+    }
+    else if (regs->eax == SYS_PIPE_CREATE) {
+        regs->eax = sys_pipe_create(regs->ebx);
+    }
+    else if (regs->eax == SYS_PIPE_READ) {
+        regs->eax = sys_pipe_read(regs->ebx, (char*)regs->ecx, regs->edx);
+    }
+    else if (regs->eax == SYS_PIPE_WRITE) {
+        regs->eax = sys_pipe_write(regs->ebx, (const char*)regs->ecx, regs->edx);
+    }
+    else if (regs->eax == SYS_MBOX_SEND) {
+        regs->eax = sys_mbox_send(regs->ebx, (const char*)regs->ecx, regs->edx);
+    }
+    else if (regs->eax == SYS_MBOX_RECV) {
+        regs->eax = sys_mbox_recv(regs->ebx, (char*)regs->ecx, regs->edx);
+    }
+    else if (regs->eax == SYS_SHM_AT) {
+        regs->eax = (unsigned int)sys_shm_at(regs->ebx, regs->ecx);
     }
     return (unsigned int)regs;
 }
