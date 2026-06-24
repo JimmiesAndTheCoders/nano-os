@@ -107,8 +107,8 @@ Added feature:
 
 ### Date: 2026-06-24
 
-Updated feature:
-- Updated ELF binary to pass environment variables and command-line arguments (argc/argv) to user programs.
+Added feature:
+- A dynamic linking support for shared libraries (.so files), and pass environment variables and command-line arguments (argc/argv) to user programs.
 
 ##
 
