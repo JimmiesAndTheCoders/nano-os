@@ -1,29 +1,21 @@
-#include "sys/syscall.h"
-#include "string.h"
+#include "stdio.h"
 
-void _start(int argc, char** argv, char** envp) {
-    const char* msg = "\n[USER PROCESS] Compiled with nanolibc and running in Ring 3!\n";
-    
-    // Invoke SYS_PRINT (0) system call via our clean __syscall1 wrapper
-    __syscall1(SYS_PRINT, (int)msg);
+int main(int argc, char** argv, char** envp) {
+    printf("\n[USER PROCESS] Hello from a dynamically loaded user-space ELF executable running in Ring 3!\n");
 
     if (argc > 0) {
-        __syscall1(SYS_PRINT, (int)"\nCommand-line arguments:\n");
+        printf("\nArguments provided:\n");
         for (int i = 0; i < argc; i++) {
-            __syscall1(SYS_PRINT, (int)argv[i]);
-            __syscall1(SYS_PRINT, (int)"\n");
+            printf("  argv[%d]: %s\n", i, argv[i]);
         }
     }
 
     if (envp && envp[0]) {
-        __syscall1(SYS_PRINT, (int)"\nEnvironment variables:\n");
+        printf("\nEnvironment variables:\n");
         for (int i = 0; envp[i]; i++) {
-            __syscall1(SYS_PRINT, (int)envp[i]);
-            __syscall1(SYS_PRINT, (int)"\n");
+            printf("  %s\n", envp[i]);
         }
     }
 
-    while (1) {
-        __asm__ __volatile__ ("nop");
-    }
+    return 0;
 }

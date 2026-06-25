@@ -3,7 +3,9 @@
 #include "unistd.h"
 #include "string.h"
 
-void _start(int argc, char** argv, char** envp) {
+int main(int argc, char** argv, char** envp) {
+    (void)argc; (void)argv; (void)envp;
+    
     printf("\n--- Malloc Test Program Starting ---\n");
     printf("Current System Ticks: %d\n", get_ticks());
 
@@ -11,7 +13,6 @@ void _start(int argc, char** argv, char** envp) {
     if (buffer != NULL) {
         printf("Successfully allocated 128 bytes at address: %x\n", (unsigned int)buffer);
         
-        // Populate and display content from user heap memory
         memcpy(buffer, "Dynamic Memory is fully functional!", 36);
         printf("Heap Buffer Content: %s\n", buffer);
         
@@ -22,5 +23,5 @@ void _start(int argc, char** argv, char** envp) {
     }
 
     printf("--- Malloc Test Program Completed ---\n");
-    exit(0);
+    return 0; // Handled by CRT0 exit sequence
 }

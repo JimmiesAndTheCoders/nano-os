@@ -1,6 +1,6 @@
+#include "shell.h"
 #include "elf.h"
 #include "rtc.h"
-#include "shell.h"
 #include "screen.h"
 #include "util.h"
 #include "initrd.h"
@@ -13,20 +13,7 @@
 #include "task.h"
 #include "ipc.h"
 
-static char current_dir[64] = "/";
-
-/* Terminal editor status parameters */
-static int editor_active = 0;
-static char editing_filename[64];
-static char edit_buffer[2048];
-static int edit_len = 0;
-
-static const char editor_sc_name[] = { 
-    '?', '?', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '?', '?', 
-    'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '?', '?', 
-    'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', '`', '?', '\\', 
-    'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', '?', '?', '?', ' '
-};
+extern char current_dir[64];
 
 static int strncmp_local(const char *s1, const char *s2, int n) {
     for (int i = 0; i < n; i++) {
@@ -55,7 +42,7 @@ static const char* strstr_local(const char *haystack, const char *needle) {
     return 0;
 }
 
-static void build_full_path(const char* current, const char* relative, char* dest) {
+void build_full_path(const char* current, const char* relative, char* dest) {
     int cur_len = strlen(current);
     int rel_len = strlen(relative);
     
@@ -73,7 +60,7 @@ static void build_full_path(const char* current, const char* relative, char* des
     }
 }
 
-static void get_parent_directory(const char* path, char* dest) {
+void get_parent_directory(const char* path, char* dest) {
     int len = strlen(path);
     if (strcmp(path, "/") == 0) {
         memory_copy("/", dest, 2);
@@ -106,76 +93,6 @@ static void hex_to_string(unsigned int val, char* dest, int width) {
         dest[width + 1 - i] = hex_chars[(val >> (i * 4)) & 0x0F];
     }
     dest[width + 2] = '\0';
-}
-
-static void draw_editor_interface() {
-    clear_screen();
-    print("--------------------------------------------------------------------------------\n");
-    print("  CNODE TERMINAL EDITOR v1.0   |   Editing File: ");
-    print(editing_filename);
-    print("\n");
-    print("  [ESC]: Save & Exit           |   [F2]: Discard & Quit\n");
-    print("--------------------------------------------------------------------------------\n\n");
-    
-    if (edit_len > 0) {
-        print(edit_buffer);
-    }
-}
-
-int shell_editor_active() {
-    return editor_active;
-}
-
-void shell_editor_handle_key(unsigned char scancode) {
-    if (scancode == 1) { // ESC: Save & Exit
-        vfs_node_t* file = vfs_resolve_path(editing_filename);
-        if (file) {
-            vfs_write(file, 0, edit_len, (const unsigned char*)edit_buffer);
-            vfs_close(file);
-        }
-        editor_active = 0;
-        clear_screen();
-        print("File '");
-        print(editing_filename);
-        print("' saved successfully via VFS.\n\n");
-        print_prompt();
-    } 
-    else if (scancode == 60) { // F2: Discard changes & Quit
-        editor_active = 0;
-        clear_screen();
-        print("Editor closed. Changes discarded.\n\n");
-        print_prompt();
-    } 
-    else if (scancode == 14) { // Backspace
-        if (edit_len > 0) {
-            edit_buffer[--edit_len] = '\0';
-            draw_editor_interface();
-        }
-    } 
-    else if (scancode == 28) { // Enter key
-        if (edit_len < 2046) {
-            edit_buffer[edit_len++] = '\n';
-            edit_buffer[edit_len] = '\0';
-            draw_editor_interface();
-        }
-    } 
-    else if (scancode <= 57) { // Char keys
-        char letter = editor_sc_name[scancode];
-        if (letter != '?') {
-            if (edit_len < 2046) {
-                edit_buffer[edit_len++] = letter;
-                edit_buffer[edit_len] = '\0';
-                char str[2] = {letter, '\0'};
-                print(str);
-            }
-        }
-    }
-}
-
-void print_prompt() {
-    print("nano:");
-    print(current_dir);
-    print("> ");
 }
 
 void process_command(char *input) {
@@ -463,53 +380,14 @@ void process_command(char *input) {
     }
     else if (strncmp_local(input, "cnode ", 6) == 0) {
         char* filename = input + 6;
-        char target_path[128];
-        build_full_path(current_dir, filename, target_path);
-        
-        vfs_node_t* file = vfs_resolve_path(target_path);
-        if (!file) {
-            char parent_path[128];
-            get_parent_directory(target_path, parent_path);
-            
-            const char* just_filename = filename;
-            for (int k = strlen(filename) - 1; k >= 0; k--) {
-                if (filename[k] == '/') {
-                    just_filename = filename + k + 1;
-                    break;
-                }
-            }
-            
-            vfs_node_t* parent = vfs_resolve_path(parent_path);
-            if (parent) {
-                if (parent->create && parent->create(parent, just_filename, VFS_FILE)) {
-                    file = vfs_resolve_path(target_path);
-                }
-                vfs_close(parent);
-            }
-        }
-        
-        if (file) {
-            if (file->length > 2040) file->length = 2040;
-            
-            unsigned int read_bytes = vfs_read(file, 0, file->length, (unsigned char*)edit_buffer);
-            edit_buffer[read_bytes] = '\0';
-            edit_len = read_bytes;
-            
-            memory_copy(target_path, editing_filename, strlen(target_path) + 1);
-            editor_active = 1;
-            draw_editor_interface();
-            vfs_close(file);
-            return;
-        } else {
-            print("Error: Could not open file for editing.\n");
-        }
+        cnode_launch(filename, current_dir);
+        return; // Early return to prevent prompt re-drawing inside editor state
     }
     else if (strncmp_local(input, "exec ", 5) == 0) {
         char* args = input + 5;
         char* argv[16];
         int argc = 0;
         
-        // Simple spaces tokenizer to format arguments into ArgV elements
         char* token = args;
         while (*token) {
             while (*token == ' ') token++;
@@ -526,7 +404,6 @@ void process_command(char *input) {
             char target_path[128];
             build_full_path(current_dir, argv[0], target_path);
 
-            // Seed environmental variables array mimicking standard system setups
             char* envp[] = {"OS=NanoOS", "USER=root", "PATH=/"};
             int envc = 3;
 
@@ -553,7 +430,7 @@ void process_command(char *input) {
     }
     else if (strncmp_local(input, "kill ", 5) == 0) {
         char* args = input + 5;
-        int pid = 0, sig = 15; // default SIGTERM
+        int pid = 0, sig = 15; 
         int i = 0;
         while (args[i] >= '0' && args[i] <= '9') {
             pid = pid * 10 + (args[i] - '0');

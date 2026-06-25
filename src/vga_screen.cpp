@@ -12,19 +12,34 @@ VgaScreen screen;
 
 VgaScreen::VgaScreen() : cursor_x(0), cursor_y(0) {}
 
+// Private helper to render a solid horizontal line at the bottom of the 16x16 text cell
+static void draw_vbe_cursor(int cx, int cy, unsigned int color) {
+    if (vbe_info->width == 0) return;
+    int px_x = cx * 16;
+    int px_y = cy * 16;
+    for (int j = 14; j < 16; j++) {
+        for (int i = 0; i < 16; i++) {
+            put_pixel(px_x + i, px_y + j, color);
+        }
+    }
+}
+
 void VgaScreen::clear() {
     if (vbe_info->width > 0) {
         fill_rect(0, 0, vbe_info->width, vbe_info->height, 0xFF000000); // Opaque black background
+        cursor_x = 0;
+        cursor_y = 0;
+        draw_vbe_cursor(cursor_x, cursor_y, 0xFFFFFFFF); // Draw initial software cursor
     } else {
         unsigned char* vidmem = (unsigned char*)VIDEO_ADDRESS;
         for (int i = 0; i < MAX_ROWS * MAX_COLS; i++) {
             vidmem[i * 2] = ' ';
             vidmem[i * 2 + 1] = 0x0F; 
         }
+        cursor_x = 0;
+        cursor_y = 0;
+        set_cursor_offset(0);
     }
-    cursor_x = 0;
-    cursor_y = 0;
-    set_cursor_offset(0);
 }
 
 void VgaScreen::print(const char* message) {
@@ -56,6 +71,9 @@ void VgaScreen::put_char(char c) {
         int max_cols = vbe_info->width / 16;
         int max_rows = vbe_info->height / 16;
 
+        // Erase the software cursor at the old position before we update the state
+        draw_vbe_cursor(cursor_x, cursor_y, 0xFF000000); // Black
+
         if (c == '\n') {
             cursor_x = 0;
             cursor_y++;
@@ -85,6 +103,9 @@ void VgaScreen::put_char(char c) {
             fill_rect(0, (max_rows - 1) * 16, vbe_info->width, 16, 0xFF000000); // Opaque black line
             cursor_y--;
         }
+
+        // Draw the software cursor at the new position
+        draw_vbe_cursor(cursor_x, cursor_y, 0xFFFFFFFF); // White
         return;
     }
 
@@ -143,8 +164,12 @@ void VgaScreen::set_cursor_offset(int offset) {
 
 void VgaScreen::set_cursor(int col, int row) {
     if (vbe_info->width > 0) {
+        // Erase old cursor before moving
+        draw_vbe_cursor(cursor_x, cursor_y, 0xFF000000);
         cursor_x = col;
         cursor_y = row;
+        // Draw new cursor at target coordinates
+        draw_vbe_cursor(cursor_x, cursor_y, 0xFFFFFFFF);
     } else {
         set_cursor_offset(get_offset(col, row));
     }

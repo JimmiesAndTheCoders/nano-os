@@ -141,6 +141,18 @@ Added feature:
 Ported languages:
 - Standard C Library
 
+#### Alpha 2
+
+##### Date: 2026-06-25
+
+Added feature:
+- CRT0
+- CNode editor
+- Text cursor
+
+Updated feature:
+- Keyboard now supports all letters, numbers, and symbols.
+
 <br>
 
 Nano OS is now built using an automated pipeline via GitHub Actions.

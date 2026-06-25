@@ -1,6 +1,5 @@
 # ==============================================================================
-# NANO OS - Clean Unified Makefile
-# Description: Consolidated build setup resolving duplicate target warnings.
+# NANO OS - Clean Unified Makefile (CRT0 & User Space Linked Build)
 # ==============================================================================
 
 ASM      = nasm
@@ -37,6 +36,7 @@ INITRD_IMG      = $(BUILD_DIR)/initrd.img
 USER_ELF        = $(BUILD_DIR)/user_hello.elf
 USER_MALLOC_ELF = $(BUILD_DIR)/user_malloc_test.elf
 LIBC_A          = $(BUILD_DIR)/libnano.a
+CRT0_O          = $(BUILD_DIR)/crt0.o
 TARGET_UUID     = d74d67a5-9c49-432e-856f-503a1abae2d8
 
 # Host Tools and Tests
@@ -55,13 +55,15 @@ LIBC_CFLAGS  = -ffreestanding -fno-pic -fno-pie -fno-stack-protector -nostdlib -
 # Find all C and C++ sources
 C_SOURCES    = $(wildcard $(SRC_DIR)/*.c)
 CPP_SOURCES  = $(wildcard $(SRC_DIR)/*.cpp)
+SHELL_SOURCES = $(wildcard $(SRC_DIR)/shell/*.c)
 LIBC_SOURCES = $(wildcard $(LIBC_DIR)/src/*.c)
 
 # Convert sources to object file paths in build/
 C_OBJS       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(C_SOURCES))
 CPP_OBJS     = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(CPP_SOURCES))
 LIBC_OBJS    = $(patsubst $(LIBC_DIR)/src/%.c, $(BUILD_DIR)/libc_%.o, $(LIBC_SOURCES))
-ALL_OBJS     = $(C_OBJS) $(CPP_OBJS)
+SHELL_OBJS   = $(patsubst $(SRC_DIR)/shell/%.c, $(BUILD_DIR)/shell_%.o, $(SHELL_SOURCES))
+ALL_OBJS     = $(C_OBJS) $(CPP_OBJS) $(SHELL_OBJS)
 
 all: $(VDI_IMG)
 
@@ -69,21 +71,35 @@ all: $(VDI_IMG)
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
+# Compilation of libc assembly startup helper (CRT0)
+$(CRT0_O): $(LIBC_DIR)/src/crt0.asm | $(BUILD_DIR)
+	$(ASM) -f elf32 $< -o $@
+
 # Compilation of libc object files
 $(BUILD_DIR)/libc_%.o: $(LIBC_DIR)/src/%.c | $(BUILD_DIR)
 	$(CC) $(LIBC_CFLAGS) -c $< -o $@
+
+# Compile files from the split shell subfolder
+$(BUILD_DIR)/shell_%.o: $(SRC_DIR)/shell/%.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 # Archiving libc into static library
 $(LIBC_A): $(LIBC_OBJS)
 	$(AR) rcs $(LIBC_A) $(LIBC_OBJS)
 
-# User Space Application Compilation - Links against compiled libnano.a
-$(USER_ELF): tests/user_hello.c $(LIBC_A) | $(BUILD_DIR)
-	$(CC) -ffreestanding -fno-pic -fno-pie -nostdlib -m32 -I$(LIBC_INC_DIR) -Ttext 0x08048000 -e _start tests/user_hello.c -L$(BUILD_DIR) -lnano -o $(USER_ELF)
+# Compile first test app - Translates code, then links CRT0 cleanly at start
+$(BUILD_DIR)/user_hello.o: tests/user_hello.c | $(BUILD_DIR)
+	$(CC) $(LIBC_CFLAGS) -c $< -o $@
+
+$(USER_ELF): $(BUILD_DIR)/user_hello.o $(CRT0_O) $(LIBC_A)
+	$(LD) -melf_i386 -Ttext 0x08048000 -e _start $(CRT0_O) $(BUILD_DIR)/user_hello.o -L$(BUILD_DIR) -lnano -o $(USER_ELF)
 
 # Compile second test app
-$(USER_MALLOC_ELF): tests/user_malloc_test.c $(LIBC_A) | $(BUILD_DIR)
-	$(CC) -ffreestanding -fno-pic -fno-pie -nostdlib -m32 -I$(LIBC_INC_DIR) -Ttext 0x08048000 -e _start tests/user_malloc_test.c -L$(BUILD_DIR) -lnano -o $(USER_MALLOC_ELF)
+$(BUILD_DIR)/user_malloc_test.o: tests/user_malloc_test.c | $(BUILD_DIR)
+	$(CC) $(LIBC_CFLAGS) -c $< -o $@
+
+$(USER_MALLOC_ELF): $(BUILD_DIR)/user_malloc_test.o $(CRT0_O) $(LIBC_A)
+	$(LD) -melf_i386 -Ttext 0x08048000 -e _start $(CRT0_O) $(BUILD_DIR)/user_malloc_test.o -L$(BUILD_DIR) -lnano -o $(USER_MALLOC_ELF)
 
 # Bootloader
 $(BOOT_BIN): boot.asm | $(BUILD_DIR)
