@@ -1,19 +1,16 @@
-# =================================================
-# FILE: Makefile
-# =================================================
 # ==============================================================================
-# NANO OS - Cross-Platform Makefile
-# Description: Supports Linux, macOS, and Windows (MSYS2) host environments.
+# NANO OS - Clean Unified Makefile
+# Description: Consolidated build setup resolving duplicate target warnings.
 # ==============================================================================
 
 ASM      = nasm
 CC       = i686-elf-gcc
 CPP      = i686-elf-g++
 LD       = i686-elf-ld
+AR       = i686-elf-ar
 VBOX     = VBoxManage
 HOST_CC  = gcc
 
-# Handle executable extensions for Windows hosts
 ifeq ($(OS),Windows_NT)
     HOST_EXE = .exe
 else
@@ -26,18 +23,21 @@ SRC_DIR   = src
 INC_DIR   = include
 TEST_DIR  = tests
 TOOLS_DIR = tools
+LIBC_DIR  = libc
 
 # Output filenames
-BOOT_BIN    = $(BUILD_DIR)/boot.bin
-ENTRY_O     = $(BUILD_DIR)/kernel_entry.o
-INTR_O      = $(BUILD_DIR)/interrupt.o
-KERN_BIN    = $(BUILD_DIR)/kernel.bin
-FULL_KERN   = $(BUILD_DIR)/full_kernel.bin
-RAW_IMG     = $(BUILD_DIR)/nano_os.img
-VDI_IMG     = nano_os.vdi
-INITRD_IMG  = $(BUILD_DIR)/initrd.img
-USER_ELF    = $(BUILD_DIR)/user_hello.elf
-TARGET_UUID = d74d67a5-9c49-432e-856f-503a1abae2d8
+BOOT_BIN        = $(BUILD_DIR)/boot.bin
+ENTRY_O         = $(BUILD_DIR)/kernel_entry.o
+INTR_O          = $(BUILD_DIR)/interrupt.o
+KERN_BIN        = $(BUILD_DIR)/kernel.bin
+FULL_KERN       = $(BUILD_DIR)/full_kernel.bin
+RAW_IMG         = $(BUILD_DIR)/nano_os.img
+VDI_IMG         = nano_os.vdi
+INITRD_IMG      = $(BUILD_DIR)/initrd.img
+USER_ELF        = $(BUILD_DIR)/user_hello.elf
+USER_MALLOC_ELF = $(BUILD_DIR)/user_malloc_test.elf
+LIBC_A          = $(BUILD_DIR)/libnano.a
+TARGET_UUID     = d74d67a5-9c49-432e-856f-503a1abae2d8
 
 # Host Tools and Tests
 MAKE_INITRD = $(BUILD_DIR)/make_initrd$(HOST_EXE)
@@ -48,14 +48,20 @@ CFLAGS      = -ffreestanding -fno-pic -fno-pie -fno-stack-protector -nostdlib -I
 CPPFLAGS    = -ffreestanding -fno-pic -fno-pie -O2 -Wall -Wextra -fno-exceptions -fno-rtti -I$(INC_DIR)
 HOST_CFLAGS = -I$(INC_DIR) -Wall -Wextra -g -fno-builtin
 
+# Libc Compiler flags
+LIBC_INC_DIR = $(LIBC_DIR)/include
+LIBC_CFLAGS  = -ffreestanding -fno-pic -fno-pie -fno-stack-protector -nostdlib -m32 -I$(LIBC_INC_DIR) -Wall -Wextra
+
 # Find all C and C++ sources
-C_SOURCES   = $(wildcard $(SRC_DIR)/*.c)
-CPP_SOURCES = $(wildcard $(SRC_DIR)/*.cpp)
+C_SOURCES    = $(wildcard $(SRC_DIR)/*.c)
+CPP_SOURCES  = $(wildcard $(SRC_DIR)/*.cpp)
+LIBC_SOURCES = $(wildcard $(LIBC_DIR)/src/*.c)
 
 # Convert sources to object file paths in build/
-C_OBJS      = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(C_SOURCES))
-CPP_OBJS    = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(CPP_SOURCES))
-ALL_OBJS    = $(C_OBJS) $(CPP_OBJS)
+C_OBJS       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(C_SOURCES))
+CPP_OBJS     = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(CPP_SOURCES))
+LIBC_OBJS    = $(patsubst $(LIBC_DIR)/src/%.c, $(BUILD_DIR)/libc_%.o, $(LIBC_SOURCES))
+ALL_OBJS     = $(C_OBJS) $(CPP_OBJS)
 
 all: $(VDI_IMG)
 
@@ -63,9 +69,21 @@ all: $(VDI_IMG)
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-# User Space Application Compilation
-$(USER_ELF): tests/user_hello.c | $(BUILD_DIR)
-	$(CC) -ffreestanding -fno-pic -fno-pie -nostdlib -m32 -Ttext 0x08048000 -e _start tests/user_hello.c -o $(USER_ELF)
+# Compilation of libc object files
+$(BUILD_DIR)/libc_%.o: $(LIBC_DIR)/src/%.c | $(BUILD_DIR)
+	$(CC) $(LIBC_CFLAGS) -c $< -o $@
+
+# Archiving libc into static library
+$(LIBC_A): $(LIBC_OBJS)
+	$(AR) rcs $(LIBC_A) $(LIBC_OBJS)
+
+# User Space Application Compilation - Links against compiled libnano.a
+$(USER_ELF): tests/user_hello.c $(LIBC_A) | $(BUILD_DIR)
+	$(CC) -ffreestanding -fno-pic -fno-pie -nostdlib -m32 -I$(LIBC_INC_DIR) -Ttext 0x08048000 -e _start tests/user_hello.c -L$(BUILD_DIR) -lnano -o $(USER_ELF)
+
+# Compile second test app
+$(USER_MALLOC_ELF): tests/user_malloc_test.c $(LIBC_A) | $(BUILD_DIR)
+	$(CC) -ffreestanding -fno-pic -fno-pie -nostdlib -m32 -I$(LIBC_INC_DIR) -Ttext 0x08048000 -e _start tests/user_malloc_test.c -L$(BUILD_DIR) -lnano -o $(USER_MALLOC_ELF)
 
 # Bootloader
 $(BOOT_BIN): boot.asm | $(BUILD_DIR)
@@ -90,11 +108,11 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
 $(MAKE_INITRD): $(TOOLS_DIR)/make_initrd.c | $(BUILD_DIR)
 	$(HOST_CC) $(TOOLS_DIR)/make_initrd.c -o $(MAKE_INITRD)
 
-# Generate the file system image with packed ELF executable
-$(INITRD_IMG): $(MAKE_INITRD) $(USER_ELF) | $(BUILD_DIR)
+# Generate the file system image containing both ELF binaries
+$(INITRD_IMG): $(MAKE_INITRD) $(USER_ELF) $(USER_MALLOC_ELF) | $(BUILD_DIR)
 	@echo "Nano OS Initrd File System Successfully Mounted!" > $(BUILD_DIR)/test.txt
 	@echo "All systems operating within normal parameters." > $(BUILD_DIR)/status.txt
-	$(MAKE_INITRD) $(INITRD_IMG) $(BUILD_DIR)/test.txt $(BUILD_DIR)/status.txt $(USER_ELF)
+	$(MAKE_INITRD) $(INITRD_IMG) $(BUILD_DIR)/test.txt $(BUILD_DIR)/status.txt $(USER_ELF) $(USER_MALLOC_ELF)
 
 # Linking
 $(KERN_BIN): $(ENTRY_O) $(INTR_O) $(ALL_OBJS) linker.ld | $(BUILD_DIR)

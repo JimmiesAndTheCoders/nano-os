@@ -75,50 +75,26 @@ start:
     jmp CODE_SEG:init_pm
 
 load_kernel_from_disk:
-    ; Read first chunk of the kernel (120 sectors)
-    mov ah, 0x42                    
-    mov dl, [BOOT_DRIVE]            
     mov si, disk_address_packet1     
-    int 0x13                        
-    jc disk_error                   
+    call read_sectors
     
-    ; Read second chunk of the kernel (120 sectors)
-    mov ah, 0x42                    
-    mov dl, [BOOT_DRIVE]            
     mov si, disk_address_packet2     
-    int 0x13                        
-    jc disk_error                   
+    call read_sectors
     
-    ; Read Initrd (50 sectors)
-    mov ah, 0x42
-    mov dl, [BOOT_DRIVE]
-    mov si, initrd_packet           
-    int 0x13
-    jc disk_error
+    mov si, initrd_packet1           
+    call read_sectors
+
+    mov si, initrd_packet2           
+    call read_sectors
     
     ret
 
-align 4
-disk_address_packet1:
-    db 0x10                         ; Size of packet (16 bytes)
-    db 0                            ; Reserved (0)
-    dw 120                          ; Number of sectors to read (60 KB)
-    dw 0x0000, 0x1000               ; Offset 0x0000, Segment 0x1000 (0x10000 physical)
-    dq 1                            ; Starting LBA 1
-
-disk_address_packet2:
-    db 0x10                         ; Size of packet (16 bytes)
-    db 0                            ; Reserved (0)
-    dw 120                          ; Number of sectors to read (60 KB)
-    dw 0x0000, 0x1F00               ; Offset 0x0000, Segment 0x1F00 (0x1F000 physical)
-    dq 121                          ; Starting LBA 121
-
-initrd_packet:
-    db 0x10                         ; Size of packet (16 bytes)
-    db 0                            ; Reserved (0)
-    dw 50                           ; Number of sectors to read (25 KB)
-    dw 0x0000, 0x3000               ; Offset 0x0000, Segment 0x3000 (0x30000 physical)
-    dq 301                          ; Starting LBA 301
+read_sectors:
+    mov ah, 0x42
+    mov dl, [BOOT_DRIVE]
+    int 0x13
+    jc disk_error
+    ret
 
 disk_error:
     mov si, error_msg
@@ -233,6 +209,35 @@ setup_paging:
     or eax, 0x80000000
     mov cr0, eax
     ret
+
+align 4
+disk_address_packet1:
+    db 0x10                         ; Size of packet (16 bytes)
+    db 0                            ; Reserved (0)
+    dw 120                          ; Number of sectors to read (60 KB)
+    dw 0x0000, 0x1000               ; Offset 0x0000, Segment 0x1000 (0x10000 physical)
+    dq 1                            ; Starting LBA 1
+
+disk_address_packet2:
+    db 0x10                         ; Size of packet (16 bytes)
+    db 0                            ; Reserved (0)
+    dw 120                          ; Number of sectors to read (60 KB)
+    dw 0x0000, 0x1F00               ; Offset 0x0000, Segment 0x1F00 (0x1F000 physical)
+    dq 121                          ; Starting LBA 121
+
+initrd_packet1:
+    db 0x10                         ; Size of packet (16 bytes)
+    db 0                            ; Reserved (0)
+    dw 128                          ; Read first 128 sectors (64 KB)
+    dw 0x0000, 0x3000               ; Offset 0x0000, Segment 0x3000 (0x30000 physical)
+    dq 301                          ; Starting LBA 301
+
+initrd_packet2:
+    db 0x10                         ; Size of packet (16 bytes)
+    db 0                            ; Reserved (0)
+    dw 128                          ; Read remaining 128 sectors (64 KB)
+    dw 0x0000, 0x4000               ; Offset 0x0000, Segment 0x4000 (0x40000 physical)
+    dq 429                          ; Starting LBA 429 (301 + 128)
 
 BOOT_DRIVE      db 0
 boot_msg        db 'Nano OS Bootloader...', 0x0D, 0x0A, 0

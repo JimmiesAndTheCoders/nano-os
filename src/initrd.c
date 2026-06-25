@@ -172,6 +172,7 @@ unsigned int initrd_vfs_read(vfs_node_t* node, unsigned int offset, unsigned int
     return size;
 }
 
+// FIX: Updated buffer argument type to "const unsigned char*" to match VFS write interface signature
 unsigned int initrd_vfs_write(vfs_node_t* node, unsigned int offset, unsigned int size, const unsigned char* buffer) {
     unsigned int idx = node->impl;
     if (idx >= header->nfiles) return 0;
@@ -224,6 +225,8 @@ struct dirent* initrd_vfs_readdir(vfs_node_t* node, unsigned int index) {
     return 0;
 }
 
+int initrd_vfs_create(vfs_node_t* parent, const char* name, unsigned int flags);
+
 vfs_node_t* initrd_vfs_finddir(vfs_node_t* node, const char* name) {
     char target_path[128];
     int parent_len = strlen(node->name);
@@ -260,7 +263,7 @@ vfs_node_t* initrd_vfs_finddir(vfs_node_t* node, const char* name) {
             child->write = initrd_vfs_write;
             child->readdir = initrd_vfs_readdir;
             child->finddir = initrd_vfs_finddir;
-            child->create = 0;
+            child->create = initrd_vfs_create;
             child->open = 0;
             child->close = 0;
             child->ioctl = 0;

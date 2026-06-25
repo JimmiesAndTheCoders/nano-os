@@ -1,29 +1,28 @@
-// We align to standard C ABI parameters layout initialized by our custom loader!
+#include "sys/syscall.h"
+#include "string.h"
+
 void _start(int argc, char** argv, char** envp) {
-    const char* msg = "\n[USER PROCESS] Hello from a dynamically loaded user-space ELF executable running in Ring 3!\n";
+    const char* msg = "\n[USER PROCESS] Compiled with nanolibc and running in Ring 3!\n";
     
-    // Invoke SYS_PRINT (0) system call: EAX=0, EBX=pointer to string
-    __asm__ __volatile__ ("int $0x80" : : "a"(0), "b"(msg));
+    // Invoke SYS_PRINT (0) system call via our clean __syscall1 wrapper
+    __syscall1(SYS_PRINT, (int)msg);
 
-    // Print command line arguments loop
     if (argc > 0) {
-        __asm__ __volatile__ ("int $0x80" : : "a"(0), "b"("\nArguments provided:\n"));
+        __syscall1(SYS_PRINT, (int)"\nCommand-line arguments:\n");
         for (int i = 0; i < argc; i++) {
-            __asm__ __volatile__ ("int $0x80" : : "a"(0), "b"(argv[i]));
-            __asm__ __volatile__ ("int $0x80" : : "a"(0), "b"("\n"));
+            __syscall1(SYS_PRINT, (int)argv[i]);
+            __syscall1(SYS_PRINT, (int)"\n");
         }
     }
 
-    // Print environmental variables loop
     if (envp && envp[0]) {
-        __asm__ __volatile__ ("int $0x80" : : "a"(0), "b"("\nEnvironment variables:\n"));
+        __syscall1(SYS_PRINT, (int)"\nEnvironment variables:\n");
         for (int i = 0; envp[i]; i++) {
-            __asm__ __volatile__ ("int $0x80" : : "a"(0), "b"(envp[i]));
-            __asm__ __volatile__ ("int $0x80" : : "a"(0), "b"("\n"));
+            __syscall1(SYS_PRINT, (int)envp[i]);
+            __syscall1(SYS_PRINT, (int)"\n");
         }
     }
 
-    // Spin processor lock natively
     while (1) {
         __asm__ __volatile__ ("nop");
     }
