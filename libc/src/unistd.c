@@ -21,3 +21,7 @@ int read(int fd, void *buf, size_t count) {
 unsigned int get_ticks(void) {
     return (unsigned int)__syscall0(SYS_GET_TICKS);
 }
+
+void *sbrk(int increment) {
+    return (void *)__syscall1(SYS_SBRK, increment);
+}

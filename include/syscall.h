@@ -17,6 +17,7 @@
 #define SYS_MBOX_SEND   9
 #define SYS_MBOX_RECV   10
 #define SYS_SHM_AT      12
+#define SYS_SBRK        13 // FIX: POSIX dynamic break expansion identifier
 
 void init_syscalls();
 unsigned int syscall_handler(registers_t *regs);

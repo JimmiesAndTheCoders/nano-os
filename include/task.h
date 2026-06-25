@@ -14,5 +14,8 @@ void task_signal(int pid, int sig);
 void task_terminate(int pid);
 void task_list();
 void task_kill_foreground();
+unsigned int task_get_heap_end(int pid);
+void task_set_heap_end(int pid, unsigned int heap_end);
+unsigned int task_get_page_directory(int pid);
 
 #endif

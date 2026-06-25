@@ -153,6 +153,13 @@ Added feature:
 Updated feature:
 - Keyboard now supports all letters, numbers, and symbols.
 
+#### Alpha 3
+
+##### Date: 2026-06-25
+
+Added feature:
+- Implement sbrk syscall and dynamic user heap.
+
 <br>
 
 Nano OS is now built using an automated pipeline via GitHub Actions.

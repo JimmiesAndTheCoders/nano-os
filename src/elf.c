@@ -24,7 +24,7 @@ typedef struct elf_obj {
 static elf_obj_t* loaded_objects = 0;
 static unsigned int next_lib_addr = 0x40000000;
 
-static void map_page(unsigned int* pd, unsigned int vaddr, unsigned int paddr, unsigned int flags) {
+void map_page(unsigned int* pd, unsigned int vaddr, unsigned int paddr, unsigned int flags) {
     unsigned int pde_idx = vaddr >> 22;
     unsigned int pte_idx = (vaddr >> 12) & 0x3FF;
 

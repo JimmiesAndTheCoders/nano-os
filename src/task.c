@@ -17,6 +17,7 @@ typedef struct task {
     int pid;
     unsigned int pending_signals;
     int is_user;
+    unsigned int heap_end;       // FIX: Tracks process virtual break boundary (sbrk)
 } task_t;
 
 static task_t tasks[MAX_TASKS];
@@ -30,11 +31,13 @@ void init_tasking() {
         tasks[i].pid = i;
         tasks[i].pending_signals = 0;
         tasks[i].is_user = 0;
+        tasks[i].heap_end = 0;
     }
 
     tasks[0].active = 1;
     tasks[0].kernel_stack = 0x90000; 
     tasks[0].page_directory = 0x9000; // Default boot page directory
+    tasks[0].heap_end = 0;            // Kernel doesn't use standard sbrk
     memory_copy("kernel", tasks[0].name, 7);
     current_task = 0;
     task_count = 1;
@@ -65,6 +68,7 @@ void task_add(void (*entry)(), const char *name) {
     tasks[task_count].pid = task_count;
     tasks[task_count].pending_signals = 0;
     tasks[task_count].is_user = 1;
+    tasks[task_count].heap_end = 0;
     
     int i = 0;
     while(name[i] && i < 15) { tasks[task_count].name[i] = name[i]; i++; }
@@ -102,6 +106,7 @@ void task_add_user(void (*entry)(), const char *name) {
     tasks[task_count].pid = task_count;
     tasks[task_count].pending_signals = 0;
     tasks[task_count].is_user = 1;
+    tasks[task_count].heap_end = 0x30000000; // Initialize user heap boundary at 768 MB
     
     int i = 0;
     while(name[i] && i < 15) { tasks[task_count].name[i] = name[i]; i++; }
@@ -119,8 +124,8 @@ void task_add_user_elf(void (*entry)(), unsigned int user_esp, unsigned int page
     *(--stack) = 0x23;                        // SS (User Mode Data Segment)
     *(--stack) = user_esp;                    // ESP (User Mode Stack pointer)
     *(--stack) = 0x0202;                      // EFLAGS (Interrupts enabled)
-    *(--stack) = 0x1B;                        // CS (User Mode Code Segment)
-    *(--stack) = (unsigned int)entry;         // EIP
+    *(--stack) = 0x1B;                        // CS (User Mode Code Segment, ring 3)
+    *(--stack) = (unsigned int)entry; 
 
     *(--stack) = 0;                
     *(--stack) = 32;               
@@ -128,7 +133,7 @@ void task_add_user_elf(void (*entry)(), unsigned int user_esp, unsigned int page
     *(--stack) = 0; *(--stack) = 0; *(--stack) = 0; *(--stack) = 0; 
     *(--stack) = 0; *(--stack) = 0; *(--stack) = 0; *(--stack) = 0; 
 
-    *(--stack) = 0x23;                        // DS (User Mode Data Segment)
+    *(--stack) = 0x23;                        // DS
 
     tasks[task_count].esp = (unsigned int)stack;
     tasks[task_count].kernel_stack = kernel_stack_mem + STACK_SIZE;
@@ -137,6 +142,7 @@ void task_add_user_elf(void (*entry)(), unsigned int user_esp, unsigned int page
     tasks[task_count].pid = task_count;
     tasks[task_count].pending_signals = 0;
     tasks[task_count].is_user = 1;
+    tasks[task_count].heap_end = 0x30000000; // Initialize user ELF heap boundary at 768 MB
     
     int i = 0;
     while(name[i] && i < 15) { tasks[task_count].name[i] = name[i]; i++; }
@@ -186,6 +192,21 @@ void task_list() {
         print(tasks[i].name);
         print("\n");
     }
+}
+
+unsigned int task_get_heap_end(int pid) {
+    if (pid < 0 || pid >= MAX_TASKS) return 0;
+    return tasks[pid].heap_end;
+}
+
+void task_set_heap_end(int pid, unsigned int heap_end) {
+    if (pid < 0 || pid >= MAX_TASKS) return;
+    tasks[pid].heap_end = heap_end;
+}
+
+unsigned int task_get_page_directory(int pid) {
+    if (pid < 0 || pid >= MAX_TASKS) return 0;
+    return tasks[pid].page_directory;
 }
 
 unsigned int schedule(registers_t *regs) {

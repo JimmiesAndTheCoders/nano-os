@@ -180,7 +180,7 @@ extern "C" void kernel_main() {
 
     print("\n============================================================\n\n");
 
-    print("Nano OS Version 2.0.0-beta.1\n"); // IT'S BEEN UNCHANGED THIS WHOLE TIME!???!??!
+    print("Nano OS Version 2.0.0-beta.3\n");
     print("(c) 2026 JimmiesAndTheCoders. All rights reserved.\n");
     print("Type 'help' to get started.\n\n");
     

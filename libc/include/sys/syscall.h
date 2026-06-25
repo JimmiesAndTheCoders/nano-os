@@ -14,6 +14,7 @@
 #define SYS_MBOX_SEND   9
 #define SYS_MBOX_RECV   10
 #define SYS_SHM_AT      12
+#define SYS_SBRK        13 // Added
 
 /* System call register execution stubs */
 int __syscall0(int num);
