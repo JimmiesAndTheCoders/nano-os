@@ -2,17 +2,18 @@
 
 ![NOS Screenchot](docs/screenshot.png)
 
-Nano OS is a lightweight, 32-bit hobby operating system developed from scratch (well, not from scratch, it was made with AI or something like that). It features a custom bootloader, a protected-mode C kernel, VGA hardware drivers, interrupt management, and an interactive command-line shell.
+Nano OS is a lightweight, 32-bit hobby operating system developed from scratch. It features a custom bootloader, a protected-mode hybrid C/C++/Zig kernel, VGA hardware drivers, interrupt management, and an interactive command-line shell.
 
 ## Key Features
 
 - **Custom Bootloader**: Minimalist 16-bit real-mode assembly boot sector.
-- **32-bit Protected Mode**: Seamless transition to high-performance C execution.
+- **32-bit Protected Mode**: Seamless transition to high-performance execution.
+- **Hybrid Compiler Support**: Seamless compilation and linking of C, C++, and Zig modules.
 - **Hardware Drivers**: VGA text-mode driver with screen scrolling and cursor control.
 - **Interrupt Management**: Full Interrupt Descriptor Table (IDT) implementation for hardware/CPU event handling.
 - **Keyboard Driver**: Real-time hardware interrupt-driven keyboard input with scancode-to-ASCII translation.
 - **Nano Shell**: Built-in CLI with command parsing, backspace/newline support, and custom command execution.
-- **Automated Build System**: Professional Makefile-driven compilation with clean, organized directory structures.
+- **Automated Build System**: Professional Makefile-driven compilation supporting multiple toolchains.
 
 ## Build & Run Instructions
 
@@ -20,6 +21,7 @@ Nano OS is a lightweight, 32-bit hobby operating system developed from scratch (
 
 - `nasm`: Assembler
 - `i686-elf-gcc` / `i686-elf-ld`: Cross-compiler toolchain
+- `zig` (v0.16.0 or compatible): Alternative compiler for core modules
 - `make`: Build automation
 - Almost any virtual machine (e.g., QEMU, VirtualBox) or emulator (e.g., Bochs) that supports booting from a disk image.
 

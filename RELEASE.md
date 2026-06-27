@@ -197,6 +197,15 @@ Replaced:
 Other:
 - Supports %c, %s, %d/%i, %u, %x/%X and %%. Uses a 2048-byte stack buffer for vfprintf and preserves previous behavior by mapping streams to file descriptors 0/1/2.
 
+#### Beta 1
+
+##### Date: 2026-06-27
+
+Added feature:
+- Alternative compiler integration for core modules using the Zig build toolchain.
+- Implemented core physical frame boundary checks in Zig (`src/zig_module.zig`) targeting `x86-freestanding-none`.
+- Expanded the main Makefile build sequence to automatically compile and link Zig objects alongside the C/C++ kernel.
+
 <br>
 
 Nano OS is now built using an automated pipeline via GitHub Actions.

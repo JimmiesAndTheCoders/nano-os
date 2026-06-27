@@ -63,6 +63,7 @@ extern "C" void kernel_main() {
     }
     
     call_global_constructors();
+    bool zig_verify_safety(unsigned int addr, unsigned int size);
     init_gdt();      
     isr_install();
     irq_install();
@@ -137,6 +138,13 @@ extern "C" void kernel_main() {
     void* p_block = pmm_alloc_block();
     pmm_free_block(p_block);
     print("[OK] Bitmap-based Physical Memory Allocator verified\n");
+
+    // Perform safety check via our new Zig Module
+    if (zig_verify_safety(0x100000, 4096)) {
+        print("[OK] Zig core safety verification framework validated\n");
+    } else {
+        print("[WARN] Zig boundary check flagged potential violation\n");
+    }
 
     print("[OK] Virtual Memory (Paging) enabled and mapping isolated\n");
     print("[OK] Global Descriptor Table (GDT) and TSS reloaded\n"); 

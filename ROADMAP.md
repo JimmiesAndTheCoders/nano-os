@@ -46,7 +46,7 @@ This roadmap outlines the planned features and improvements for Nano OS. Below a
 <details>
 <summary><b>Phase 2.5: Modern Language Integration & Hybrid Runtime</b></summary>
 
-- [ ] Configure the Zig build toolchain as an alternative compiler for core kernel modules.
+- [X] Configure the Zig build toolchain as an alternative compiler for core kernel modules.
 - [ ] Establish bare-metal target specifications for Rust cross-compilation on i686 architecture.
 - [ ] Integrate automated binding tools to generate compatible headers between C, C++, Rust, and Zig.
 - [ ] Rewrite physical frame validation logic in Rust to guarantee spatial safety during allocation.

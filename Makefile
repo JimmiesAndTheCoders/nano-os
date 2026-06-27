@@ -1,5 +1,5 @@
 # ==============================================================================
-# NANO OS - Clean Unified Makefile (CRT0 & User Space Linked Build)
+# NANO OS - Clean Unified Makefile (with Zig Compiler Integration)
 # ==============================================================================
 
 ASM      = nasm
@@ -7,6 +7,7 @@ CC       = i686-elf-gcc
 CPP      = i686-elf-g++
 LD       = i686-elf-ld
 AR       = i686-elf-ar
+ZIG      = zig
 VBOX     = VBoxManage
 HOST_CC  = gcc
 NCC = $(BUILD_DIR)/ncc$(HOST_EXE)
@@ -51,22 +52,27 @@ CFLAGS      = -ffreestanding -fno-pic -fno-pie -fno-stack-protector -nostdlib -I
 CPPFLAGS    = -ffreestanding -fno-pic -fno-pie -O2 -Wall -Wextra -fno-exceptions -fno-rtti -I$(INC_DIR)
 HOST_CFLAGS = -I$(INC_DIR) -Wall -Wextra -g -fno-builtin
 
+# Zig Compiler flags (freestanding 32-bit x86 target)
+ZIGFLAGS    = build-obj -target x86-freestanding-none -O ReleaseSafe
+
 # Libc Compiler flags
 LIBC_INC_DIR = $(LIBC_DIR)/include
 LIBC_CFLAGS  = -ffreestanding -fno-pic -fno-pie -fno-stack-protector -nostdlib -m32 -I$(LIBC_INC_DIR) -Wall -Wextra
 
-# Find all C and C++ sources
-C_SOURCES    = $(wildcard $(SRC_DIR)/*.c)
-CPP_SOURCES  = $(wildcard $(SRC_DIR)/*.cpp)
+# Find all C, C++, and Zig sources
+C_SOURCES     = $(wildcard $(SRC_DIR)/*.c)
+CPP_SOURCES   = $(wildcard $(SRC_DIR)/*.cpp)
+ZIG_SOURCES   = $(wildcard $(SRC_DIR)/*.zig)
 SHELL_SOURCES = $(wildcard $(SRC_DIR)/shell/*.c)
-LIBC_SOURCES = $(wildcard $(LIBC_DIR)/src/*.c)
+LIBC_SOURCES  = $(wildcard $(LIBC_DIR)/src/*.c)
 
 # Convert sources to object file paths in build/
 C_OBJS       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(C_SOURCES))
 CPP_OBJS     = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(CPP_SOURCES))
+ZIG_OBJS     = $(patsubst $(SRC_DIR)/%.zig, $(BUILD_DIR)/%.o, $(ZIG_SOURCES))
 LIBC_OBJS    = $(patsubst $(LIBC_DIR)/src/%.c, $(BUILD_DIR)/libc_%.o, $(LIBC_SOURCES))
 SHELL_OBJS   = $(patsubst $(SRC_DIR)/shell/%.c, $(BUILD_DIR)/shell_%.o, $(SHELL_SOURCES))
-ALL_OBJS     = $(C_OBJS) $(CPP_OBJS) $(SHELL_OBJS)
+ALL_OBJS     = $(C_OBJS) $(CPP_OBJS) $(ZIG_OBJS) $(SHELL_OBJS)
 
 all: $(VDI_IMG)
 
@@ -128,6 +134,10 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
     
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
 	$(CPP) $(CPPFLAGS) -c $< -o $@
+
+# Zig source compilation
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.zig | $(BUILD_DIR)
+	$(ZIG) $(ZIGFLAGS) $< -femit-bin=$@
 
 # Tool build
 $(MAKE_INITRD): $(TOOLS_DIR)/make_initrd.c | $(BUILD_DIR)
