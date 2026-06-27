@@ -167,6 +167,16 @@ Added feature:
 Added feature:
 - NCC host compiler tool and new user apps (user_prime, user_ipc_demo), and more.
 
+#### Alpha 5
+
+##### Date: 2026-06-27
+
+Added feature:
+- C library utilities.
+
+Rewritten files:
+- make_initrd.c
+
 <br>
 
 Nano OS is now built using an automated pipeline via GitHub Actions.

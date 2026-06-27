@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include "stdlib.h"
 #include "unistd.h"
 #include "string.h"
@@ -9,6 +10,8 @@ typedef struct block_header {
 } block_header_t;
 
 static block_header_t *heap_start = NULL;
+
+// --- Memory Management functions ---
 
 void *malloc(size_t size) {
     if (size == 0) return NULL;
@@ -82,4 +85,77 @@ void exit(int status) {
     while (1) {
         __asm__ __volatile__ ("nop");
     }
+}
+
+// --- Utility Conversion functions ---
+
+int atoi(const char *str) {
+    int res = 0;
+    int sign = 1;
+    size_t i = 0;
+
+    // Skip whitespace characters
+    while (str[i] == ' ' || str[i] == '\t' || str[i] == '\n' ||
+           str[i] == '\v' || str[i] == '\f' || str[i] == '\r') {
+        i++;
+    }
+
+    if (str[i] == '-') {
+        sign = -1;
+        i++;
+    } else if (str[i] == '+') {
+        i++;
+    }
+
+    while (str[i] >= '0' && str[i] <= '9') {
+        res = res * 10 + (str[i] - '0');
+        i++;
+    }
+
+    return sign * res;
+}
+
+static void reverse_str(char *str, size_t len) {
+    size_t start = 0;
+    size_t end = len - 1;
+    while (start < end) {
+        char temp = str[start];
+        str[start] = str[end];
+        str[end] = temp;
+        start++;
+        end--;
+    }
+}
+
+char *itoa(int value, char *str, int base) {
+    if (base < 2 || base > 36) {
+        *str = '\0';
+        return str;
+    }
+
+    size_t i = 0;
+    int is_negative = 0;
+    unsigned int num = value;
+
+    if (value < 0 && base == 10) {
+        is_negative = 1;
+        num = -value;
+    }
+
+    do {
+        int rem = num % base;
+        str[i++] = (rem < 10) ? (rem + '0') : (rem - 10 + 'a');
+    } while ((num /= base) > 0);
+
+    if (is_negative) {
+        str[i++] = '-';
+    }
+
+    str[i] = '\0';
+    reverse_str(str, i);
+    return str;
+}
+
+int abs(int j) {
+    return (j < 0) ? -j : j;
 }
