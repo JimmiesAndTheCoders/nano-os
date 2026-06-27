@@ -184,6 +184,19 @@ Rewritten files:
 Added feature:
 - calloc/realloc.
 
+#### Alpha 7
+
+##### Date: 2026-06-27
+
+Added feature:
+- Introduce FILE struct and stdin/stdout/stderr, define EOF, and expand stdio.h with prototypes for formatted and unformatted I/O.
+
+Replaced:
+- oOld syscall-based putchar/puts with implementations using read/write (unistd), implement vsprintf/vfprintf, printf/fprintf/sprintf, fputc/fputs, getchar/fgetc, and helper itoa functions.
+
+Other:
+- Supports %c, %s, %d/%i, %u, %x/%X and %%. Uses a 2048-byte stack buffer for vfprintf and preserves previous behavior by mapping streams to file descriptors 0/1/2.
+
 <br>
 
 Nano OS is now built using an automated pipeline via GitHub Actions.
