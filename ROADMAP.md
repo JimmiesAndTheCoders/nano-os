@@ -40,7 +40,18 @@ Phase 2: Core Subsystems & Persistent Storage
 - [X] Pass environment variables and command-line arguments (argc/argv) to user programs.
 - [X] Implement Unix-like Signals for basic process control (e.g., SIGKILL, SIGINT).
 - [X] Implement Inter-Process Communication (IPC) via pipes, mailboxes, and shared memory (mmap).
-- [ ] Port a standard C library (libc) tailored to Nano OS system calls for user applications.
+
+<details>
+<summary><b>Port a standard C library (libc) tailored to Nano OS system calls for user applications.</b></summary>
+
+- [X] Create the workspace and prepare the build pipeline.
+- [X] Write the bootstrap assembly wrapper that transitions execution from the ELF loader to the user program's `main` function.
+- [X] Bridge the gap between user-space code and the kernel's `int 0x80` interface.
+- [X] Implement essential string manipulation and memory state functions.
+- [X] Implement a memory allocator using a static block pool or standard memory expansion.
+- [ ] Provide a working implementation of `printf` and terminal-based inputs.
+
+</details>
 
 Phase 3: Desktop Environment & Windowing
 
