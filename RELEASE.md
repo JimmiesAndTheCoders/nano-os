@@ -160,6 +160,13 @@ Updated feature:
 Added feature:
 - Implement sbrk syscall and dynamic user heap.
 
+#### Alpha 4
+
+##### Date: 2026-06-27
+
+Added feature:
+- NCC host compiler tool and new user apps (user_prime, user_ipc_demo), and more.
+
 <br>
 
 Nano OS is now built using an automated pipeline via GitHub Actions.
