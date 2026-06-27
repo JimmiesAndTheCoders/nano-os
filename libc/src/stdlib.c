@@ -11,7 +11,7 @@ typedef struct block_header {
 
 static block_header_t *heap_start = NULL;
 
-// --- Memory Management functions ---
+// --- Memory Management Core Allocator ---
 
 void *malloc(size_t size) {
     if (size == 0) return NULL;
@@ -42,7 +42,7 @@ void *malloc(size_t size) {
         curr = curr->next;
     }
 
-    // 2. No block was large enough. Request virtual heap expansion from the kernel
+    // 2. Request virtual heap expansion from the kernel via sbrk
     size_t total_size = size + sizeof(block_header_t);
     block_header_t *new_block = (block_header_t *)sbrk(total_size);
     if (new_block == (void *)-1 || new_block == NULL) {
@@ -80,6 +80,54 @@ void free(void *ptr) {
     }
 }
 
+void *calloc(size_t num, size_t size) {
+    size_t total = num * size;
+    
+    // Multiplicative overflow check
+    if (num != 0 && total / num != size) {
+        return NULL;
+    }
+
+    void *ptr = malloc(total);
+    if (ptr != NULL) {
+        memset(ptr, 0, total);
+    }
+    return ptr;
+}
+
+void *realloc(void *ptr, size_t size) {
+    if (ptr == NULL) {
+        return malloc(size);
+    }
+    if (size == 0) {
+        free(ptr);
+        return NULL;
+    }
+
+    block_header_t *header = (block_header_t *)((unsigned char *)ptr - sizeof(block_header_t));
+    
+    // If the block is already of sufficient size, return the original pointer
+    if (header->size >= size) {
+        return ptr;
+    }
+
+    // Allocate a new segment
+    void *new_ptr = malloc(size);
+    if (new_ptr == NULL) {
+        return NULL;
+    }
+
+    // Copy original data and release the old allocation
+    size_t copy_size = header->size;
+    if (copy_size > size) {
+        copy_size = size;
+    }
+    memcpy(new_ptr, ptr, copy_size);
+    free(ptr);
+
+    return new_ptr;
+}
+
 void exit(int status) {
     (void)status;
     while (1) {
@@ -94,7 +142,6 @@ int atoi(const char *str) {
     int sign = 1;
     size_t i = 0;
 
-    // Skip whitespace characters
     while (str[i] == ' ' || str[i] == '\t' || str[i] == '\n' ||
            str[i] == '\v' || str[i] == '\f' || str[i] == '\r') {
         i++;

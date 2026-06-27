@@ -177,6 +177,13 @@ Added feature:
 Rewritten files:
 - make_initrd.c
 
+#### Alpha 6
+
+##### Date: 2026-06-27
+
+Added feature:
+- calloc/realloc.
+
 <br>
 
 Nano OS is now built using an automated pipeline via GitHub Actions.
