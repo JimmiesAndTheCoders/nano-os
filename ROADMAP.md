@@ -22,7 +22,7 @@ This roadmap outlines the planned features and improvements for Nano OS. The pro
 </details>
 
 <details>
-<summary><b>Phase 2: Core Subsystems & Persistent Storage</b></summary>
+<summary><b>[COMPLETED] Phase 2: Core Subsystems & Persistent Storage</b></summary>
 
 - [X] Add a PCI bus enumerator to detect, parse configuration spaces, and configure hardware.
 - [X] Add support for MSI/MSI-X (Message Signaled Interrupts) in the PCI driver.
