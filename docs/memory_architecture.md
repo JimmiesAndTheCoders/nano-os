@@ -14,7 +14,7 @@ Nano OS utilizes a heavily structured memory map during the boot process and ker
 | `0x9000` - `0x9FFF` | 4 KB   | **Page Directory**: Global page directory table.                                  |
 | `0xA000` - `0xAFFF` | 4 KB   | **Page Table**: First page table (identity maps the first 4MB of memory).         |
 | `0x10000`           | Variable| **Kernel Code/Data**: Shifted up from 0x1000 to 0x10000 to accommodate more lower memory features. |
-| `0x30000`           | Variable| **Initrd (RAM Disk)**: Initial ramdisk loaded by BIOS interrupt 0x13 before protected mode. |
+| `0x60000`           | Variable| **Initrd (RAM Disk)**: Initial ramdisk loaded by BIOS interrupt 0x13 before protected mode. |
 | `0x90000`           | ~64 KB | **Kernel Stack**: Initial downward-growing stack set by the bootloader for the C kernel. |
 | `0x100000` (1MB)    | Variable| **PMM Free Pool**: Starting address of free frames available for allocation.      |
 | `0x200000` (2MB)    | 512 KB | **Kernel Heap**: Bounded dynamic heap used for `kmalloc` and `kfree`.             |

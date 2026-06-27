@@ -9,6 +9,7 @@ LD       = i686-elf-ld
 AR       = i686-elf-ar
 VBOX     = VBoxManage
 HOST_CC  = gcc
+NCC = $(BUILD_DIR)/ncc$(HOST_EXE)
 
 ifeq ($(OS),Windows_NT)
     HOST_EXE = .exe
@@ -35,6 +36,8 @@ VDI_IMG         = nano_os.vdi
 INITRD_IMG      = $(BUILD_DIR)/initrd.img
 USER_ELF        = $(BUILD_DIR)/user_hello.elf
 USER_MALLOC_ELF = $(BUILD_DIR)/user_malloc_test.elf
+USER_PRIME_ELF  = $(BUILD_DIR)/user_prime.elf
+USER_IPC_ELF    = $(BUILD_DIR)/user_ipc_demo.elf
 LIBC_A          = $(BUILD_DIR)/libnano.a
 CRT0_O          = $(BUILD_DIR)/crt0.o
 TARGET_UUID     = d74d67a5-9c49-432e-856f-503a1abae2d8
@@ -87,19 +90,25 @@ $(BUILD_DIR)/shell_%.o: $(SRC_DIR)/shell/%.c | $(BUILD_DIR)
 $(LIBC_A): $(LIBC_OBJS)
 	$(AR) rcs $(LIBC_A) $(LIBC_OBJS)
 
-# Compile first test app - Translates code, then links CRT0 cleanly at start
-$(BUILD_DIR)/user_hello.o: tests/user_hello.c | $(BUILD_DIR)
-	$(CC) $(LIBC_CFLAGS) -c $< -o $@
+# Build the ncc host tool
+$(NCC): $(TOOLS_DIR)/ncc.c | $(BUILD_DIR)
+	$(HOST_CC) $(HOST_CFLAGS) $(TOOLS_DIR)/ncc.c -o $(NCC)
 
-$(USER_ELF): $(BUILD_DIR)/user_hello.o $(CRT0_O) $(LIBC_A)
-	$(LD) -melf_i386 -Ttext 0x08048000 -e _start $(CRT0_O) $(BUILD_DIR)/user_hello.o -L$(BUILD_DIR) -lnano -o $(USER_ELF)
+# Compile user_hello.elf using ncc
+$(USER_ELF): tests/user_hello.c $(CRT0_O) $(LIBC_A) $(NCC)
+	$(NCC) tests/user_hello.c $(USER_ELF)
 
-# Compile second test app
-$(BUILD_DIR)/user_malloc_test.o: tests/user_malloc_test.c | $(BUILD_DIR)
-	$(CC) $(LIBC_CFLAGS) -c $< -o $@
+# Compile user_malloc_test.elf using ncc
+$(USER_MALLOC_ELF): tests/user_malloc_test.c $(CRT0_O) $(LIBC_A) $(NCC)
+	$(NCC) tests/user_malloc_test.c $(USER_MALLOC_ELF)
 
-$(USER_MALLOC_ELF): $(BUILD_DIR)/user_malloc_test.o $(CRT0_O) $(LIBC_A)
-	$(LD) -melf_i386 -Ttext 0x08048000 -e _start $(CRT0_O) $(BUILD_DIR)/user_malloc_test.o -L$(BUILD_DIR) -lnano -o $(USER_MALLOC_ELF)
+# Compile user_prime.elf using ncc
+$(USER_PRIME_ELF): tests/user_prime.c $(CRT0_O) $(LIBC_A) $(NCC)
+	$(NCC) tests/user_prime.c $(USER_PRIME_ELF)
+
+# Compile user_ipc_demo.elf using ncc
+$(USER_IPC_ELF): tests/user_ipc_demo.c $(CRT0_O) $(LIBC_A) $(NCC)
+	$(NCC) tests/user_ipc_demo.c $(USER_IPC_ELF)
 
 # Bootloader
 $(BOOT_BIN): boot.asm | $(BUILD_DIR)
@@ -124,11 +133,9 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
 $(MAKE_INITRD): $(TOOLS_DIR)/make_initrd.c | $(BUILD_DIR)
 	$(HOST_CC) $(TOOLS_DIR)/make_initrd.c -o $(MAKE_INITRD)
 
-# Generate the file system image containing both ELF binaries
-$(INITRD_IMG): $(MAKE_INITRD) $(USER_ELF) $(USER_MALLOC_ELF) | $(BUILD_DIR)
-	@echo "Nano OS Initrd File System Successfully Mounted!" > $(BUILD_DIR)/test.txt
-	@echo "All systems operating within normal parameters." > $(BUILD_DIR)/status.txt
-	$(MAKE_INITRD) $(INITRD_IMG) $(BUILD_DIR)/test.txt $(BUILD_DIR)/status.txt $(USER_ELF) $(USER_MALLOC_ELF)
+# Generate the file system image containing all ELF binaries
+$(INITRD_IMG): $(MAKE_INITRD) $(USER_ELF) $(USER_MALLOC_ELF) $(USER_PRIME_ELF) $(USER_IPC_ELF) | $(BUILD_DIR)
+	$(MAKE_INITRD) $(INITRD_IMG) $(USER_ELF) $(USER_MALLOC_ELF) $(USER_PRIME_ELF) $(USER_IPC_ELF)
 
 # Linking
 $(KERN_BIN): $(ENTRY_O) $(INTR_O) $(ALL_OBJS) linker.ld | $(BUILD_DIR)
@@ -139,7 +146,7 @@ $(RAW_IMG): $(BOOT_BIN) $(KERN_BIN) $(INITRD_IMG) | $(BUILD_DIR)
 	cat $(BOOT_BIN) $(KERN_BIN) > $(FULL_KERN)
 	dd if=/dev/zero of=$(RAW_IMG) bs=512 count=20480
 	dd if=$(FULL_KERN) of=$(RAW_IMG) conv=notrunc
-	dd if=$(INITRD_IMG) of=$(RAW_IMG) obs=512 seek=301 conv=notrunc
+	dd if=$(INITRD_IMG) of=$(RAW_IMG) obs=512 seek=601 conv=notrunc
 
 # VDI Deployment
 $(VDI_IMG): $(RAW_IMG)

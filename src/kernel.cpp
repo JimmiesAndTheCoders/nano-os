@@ -69,9 +69,9 @@ extern "C" void kernel_main() {
     
     init_pmm(0x100000);              
     kmalloc_init(0x200000, 0x80000); 
-    pmm_reserve_region(0x300000, 0x20000); 
-    init_initrd(0x30000);           
-    init_syscalls();                 
+    pmm_reserve_region(0x60000, 0x20000); // Reserve 128 KB for RAM disk
+    init_initrd(0x60000);                 // Mount at physical address 0x60000
+    init_syscalls();
     init_timer(100);                 
     init_tasking();                  
     init_keyboard();
@@ -85,6 +85,28 @@ extern "C" void kernel_main() {
     // VFS & Mount Initialisation
     init_vfs();
     vfs_root = init_initrd_vfs();
+    
+    // Pre-add standard files to the RAM disk root directory
+    create_file("bin", 1);
+    move_file("user_hello.elf", "bin/user_hello.elf");
+    move_file("user_malloc_test.elf", "bin/user_malloc_test.elf");
+    move_file("user_prime.elf", "bin/user_prime.elf");
+    move_file("user_ipc_demo.elf", "bin/user_ipc_demo.elf");
+    
+    create_file("readme.txt", 0);
+    write_file_content("readme.txt", "Welcome to Nano OS!\nUse 'help' to see available commands.\nUse 'exec [file]' to run user applications.\n", 79);
+    
+    // --- RAM Disk Diagnostic Print ---
+    print("\n--- RAM Disk Boot Diagnostics ---\n");
+    char debug_buf[32];
+    itoa(header->nfiles, debug_buf);
+    print("  File Count in Header: "); print(debug_buf); print("\n");
+    for (unsigned int i = 0; i < header->nfiles; i++) {
+        print("  - File "); itoa(i, debug_buf); print(debug_buf); print(": ");
+        print(header->files[i].name);
+        print(" (size: "); itoa(header->files[i].length, debug_buf); print(debug_buf); print(" bytes)\n");
+    }
+    print("----------------------------------\n\n");
 
     // Initialize IPC Tables and map the registry virtual disk
     init_ipc();
@@ -132,7 +154,7 @@ extern "C" void kernel_main() {
     }
 
     print("[OK] Preemptive Multitasking active (3 tasks queued)\n");
-    print("[OK] RAM-based File System (Initrd) mounted at 0x300000\n");
+    print("[OK] RAM-based File System (Initrd) mounted at 0x60000\n");
     print("[OK] User-space Software Interrupts (Syscalls) ready\n");
     print("[OK] PCI Bus Enumerator successfully initialized\n");
     print("[OK] Local APIC mapped and configured for MSI transport\n");
@@ -180,7 +202,7 @@ extern "C" void kernel_main() {
 
     print("\n============================================================\n\n");
 
-    print("Nano OS Version 2.0.0-beta.3\n");
+    print("Nano OS Version 2.0.0-beta.4\n");
     print("(c) 2026 JimmiesAndTheCoders. All rights reserved.\n");
     print("Type 'help' to get started.\n\n");
     

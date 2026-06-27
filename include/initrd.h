@@ -15,12 +15,15 @@ typedef struct {
     initrd_file_t files[32]; // Supporting up to 32 files
 } initrd_header_t;
 
+extern initrd_header_t* header;
+
 void init_initrd(unsigned int location);
 void list_files(const char* current_dir);
 char* read_file(const char* name);
 int create_file(const char* name, unsigned int is_dir);
 int write_file_content(const char* name, const char* content, unsigned int length);
 int directory_exists(const char* path);
+int move_file(const char* old_name, const char* new_name);
 
 // VFS Adapter Generator
 vfs_node_t* init_initrd_vfs();

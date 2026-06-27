@@ -228,21 +228,21 @@ disk_address_packet2:
 initrd_packet1:
     db 0x10                         ; Size of packet (16 bytes)
     db 0                            ; Reserved (0)
-    dw 128                          ; Read first 128 sectors (64 KB)
-    dw 0x0000, 0x3000               ; Offset 0x0000, Segment 0x3000 (0x30000 physical)
-    dq 301                          ; Starting LBA 301
+    dw 120                          ; Read 120 sectors (60 KB)
+    dw 0x0000, 0x6000               ; Offset 0x0000, Segment 0x6000 (0x60000 physical)
+    dq 601                          ; Starting LBA 601
 
 initrd_packet2:
     db 0x10                         ; Size of packet (16 bytes)
     db 0                            ; Reserved (0)
-    dw 128                          ; Read remaining 128 sectors (64 KB)
-    dw 0x0000, 0x4000               ; Offset 0x0000, Segment 0x4000 (0x40000 physical)
-    dq 429                          ; Starting LBA 429 (301 + 128)
+    dw 120                          ; Read 120 sectors (60 KB)
+    dw 0x0000, 0x6F00               ; Offset 0x0000, Segment 0x6F00 (0x6F000 physical)
+    dq 721                          ; Starting LBA 721
 
 BOOT_DRIVE      db 0
-boot_msg        db 'Nano OS Bootloader...', 0x0D, 0x0A, 0
-load_kernel_msg db 'Loading Kernel...', 0x0D, 0x0A, 0
-error_msg       db 'DISK ERROR!', 0
+boot_msg        db 'NOS Boot...', 13, 10, 0
+load_kernel_msg db 'Kernel...', 13, 10, 0
+error_msg       db 'Disk Err!', 0
 
 times 510-($-$$) db 0
 dw 0xAA55

@@ -5,7 +5,7 @@
 #include "screen.h"
 
 static unsigned int root_address = 0;
-static initrd_header_t* header = 0;
+initrd_header_t* header = 0;
 
 static int strncmp_local(const char *s1, const char *s2, int n) {
     for (int i = 0; i < n; i++) {
@@ -146,6 +146,29 @@ int directory_exists(const char* path) {
         if (f_name[0] == '/') f_name++;
         
         if (strcmp(f_name, norm_path) == 0 && header->files[i].is_dir) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int move_file(const char* old_name, const char* new_name) {
+    if (!header) return 0;
+    
+    const char* norm_old = old_name;
+    if (old_name[0] == '/') norm_old++;
+    const char* norm_new = new_name;
+    if (new_name[0] == '/') norm_new++;
+    
+    for (unsigned int i = 0; i < header->nfiles; i++) {
+        const char* f_name = header->files[i].name;
+        if (f_name[0] == '/') f_name++;
+        
+        if (strcmp(f_name, norm_old) == 0) {
+            int len = strlen(norm_new);
+            if (len > 31) len = 31;
+            memory_copy(norm_new, header->files[i].name, len);
+            header->files[i].name[len] = '\0';
             return 1;
         }
     }

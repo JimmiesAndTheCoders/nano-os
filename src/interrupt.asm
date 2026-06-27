@@ -64,7 +64,7 @@ ISR_NOERRCODE 30
 ISR_NOERRCODE 31
 
 ; --- Syscall Definition (128) ---
-ISR_NOERRCODE 128    ; <--- This is our Software Interrupt
+ISR_NOERRCODE 128    ; This is our Software Interrupt
 
 ; --- IRQ Definitions (32-47) ---
 IRQ 0, 32
@@ -102,8 +102,8 @@ isr_common_stub:
     mov es, ax
     mov fs, ax
     mov gs, ax
-    add esp, 8
-    popa
+    popa            ; 1. Restore general-purpose registers first
+    add esp, 8      ; 2. Then clear error code and interrupt number
     iret
 
 irq_common_stub:
@@ -123,8 +123,8 @@ irq_common_stub:
     mov es, ax
     mov fs, ax
     mov gs, ax
-    add esp, 8
-    popa
+    popa            ; 1. Restore general-purpose registers first
+    add esp, 8      ; 2. Then clear error code and interrupt number
     iret
 
 global gdt_flush
