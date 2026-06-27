@@ -1,5 +1,5 @@
 # ==============================================================================
-# NANO OS - Clean Unified Makefile (with Zig Compiler Integration)
+# NANO OS - Clean Unified Makefile (with Zig & Rust Compiler Integration)
 # ==============================================================================
 
 ASM      = nasm
@@ -10,7 +10,7 @@ AR       = i686-elf-ar
 ZIG      = zig
 VBOX     = VBoxManage
 HOST_CC  = gcc
-NCC = $(BUILD_DIR)/ncc$(HOST_EXE)
+NCC      = $(BUILD_DIR)/ncc$(HOST_EXE)
 
 ifeq ($(OS),Windows_NT)
     HOST_EXE = .exe
@@ -54,6 +54,10 @@ HOST_CFLAGS = -I$(INC_DIR) -Wall -Wextra -g -fno-builtin
 
 # Zig Compiler flags (freestanding 32-bit x86 target)
 ZIGFLAGS    = build-obj -target x86-freestanding-none -O ReleaseSafe
+
+# Rust Environment Variables and Outputs
+RUST_DIR       = rust_kernel
+RUST_STATICLIB = $(RUST_DIR)/target/i686-nano_os/release/librust_kernel.a
 
 # Libc Compiler flags
 LIBC_INC_DIR = $(LIBC_DIR)/include
@@ -139,6 +143,10 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.zig | $(BUILD_DIR)
 	$(ZIG) $(ZIGFLAGS) $< -femit-bin=$@
 
+# Rust cargo compilation target
+$(RUST_STATICLIB):
+	cd $(RUST_DIR) && cargo build -Zjson-target-spec --release
+
 # Tool build
 $(MAKE_INITRD): $(TOOLS_DIR)/make_initrd.c | $(BUILD_DIR)
 	$(HOST_CC) $(TOOLS_DIR)/make_initrd.c -o $(MAKE_INITRD)
@@ -147,9 +155,9 @@ $(MAKE_INITRD): $(TOOLS_DIR)/make_initrd.c | $(BUILD_DIR)
 $(INITRD_IMG): $(MAKE_INITRD) $(USER_ELF) $(USER_MALLOC_ELF) $(USER_PRIME_ELF) $(USER_IPC_ELF) | $(BUILD_DIR)
 	$(MAKE_INITRD) $(INITRD_IMG) $(USER_ELF) $(USER_MALLOC_ELF) $(USER_PRIME_ELF) $(USER_IPC_ELF)
 
-# Linking
-$(KERN_BIN): $(ENTRY_O) $(INTR_O) $(ALL_OBJS) linker.ld | $(BUILD_DIR)
-	$(LD) -T linker.ld $(ENTRY_O) $(INTR_O) $(ALL_OBJS) -o $(KERN_BIN)
+# Linking (Now bundles both the compiled Zig objects and the compiled Rust static library)
+$(KERN_BIN): $(ENTRY_O) $(INTR_O) $(ALL_OBJS) $(RUST_STATICLIB) linker.ld | $(BUILD_DIR)
+	$(LD) -T linker.ld $(ENTRY_O) $(INTR_O) $(ALL_OBJS) $(RUST_STATICLIB) -o $(KERN_BIN)
 
 # Image creation
 $(RAW_IMG): $(BOOT_BIN) $(KERN_BIN) $(INITRD_IMG) | $(BUILD_DIR)
@@ -174,5 +182,6 @@ test: $(TEST_DIR)/test_util.c $(SRC_DIR)/util.c | $(BUILD_DIR)
 clean:
 	rm -rf $(BUILD_DIR)
 	rm -f $(VDI_IMG)
+	cd $(RUST_DIR) && cargo clean
 
 .PHONY: all clean test

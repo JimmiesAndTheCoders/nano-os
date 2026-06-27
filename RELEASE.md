@@ -206,6 +206,13 @@ Added feature:
 - Implemented core physical frame boundary checks in Zig (`src/zig_module.zig`) targeting `x86-freestanding-none`.
 - Expanded the main Makefile build sequence to automatically compile and link Zig objects alongside the C/C++ kernel.
 
+#### Beta 2
+
+##### Date: 2026-06-27
+
+Added feature:
+- Rust kernel
+
 <br>
 
 Nano OS is now built using an automated pipeline via GitHub Actions.

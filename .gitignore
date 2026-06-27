@@ -1,27 +1,31 @@
-# Build directory
+# ==============================================================================
+# Nano OS Git Ignore Configuration
+# ==============================================================================
+
+# --- C/C++ Build Outputs & VM Images ---
 build/
-
-# Virtual disk images
-*.vdi
-*.img
 *.bin
-
-# Object files 
+*.elf
 *.o
+*.a
+*.img
+*.vdi
+*.vmdk
+*.vhdx
 
-# VirtualBox and OS specific clutter
-VBox.log
-VBox.png
-*.log
+# --- Rust / Cargo Outputs ---
+target/
+rust_kernel/target/
+**/*.rs.bk
 
-# Editor/IDE clutter
-.DS_Store
+# --- Editor and IDE Metadata ---
 .vscode/
 .idea/
+*.suo
+*.user
+*.swp
+*~
 
-# Windows/OS metadata clutter
+# --- System Metadata ---
+.DS_Store
 Thumbs.db
-Desktop.ini
-
-# Other clutter
-nul

@@ -8,7 +8,7 @@ Nano OS is a lightweight, 32-bit hobby operating system developed from scratch. 
 
 - **Custom Bootloader**: Minimalist 16-bit real-mode assembly boot sector.
 - **32-bit Protected Mode**: Seamless transition to high-performance execution.
-- **Hybrid Compiler Support**: Seamless compilation and linking of C, C++, and Zig modules.
+- **Hybrid Kernel Runtime**: Core safety checks and modules compiled seamlessly from C, C++, Zig, and Rust source files.
 - **Hardware Drivers**: VGA text-mode driver with screen scrolling and cursor control.
 - **Interrupt Management**: Full Interrupt Descriptor Table (IDT) implementation for hardware/CPU event handling.
 - **Keyboard Driver**: Real-time hardware interrupt-driven keyboard input with scancode-to-ASCII translation.
@@ -22,6 +22,7 @@ Nano OS is a lightweight, 32-bit hobby operating system developed from scratch. 
 - `nasm`: Assembler
 - `i686-elf-gcc` / `i686-elf-ld`: Cross-compiler toolchain
 - `zig` (v0.16.0 or compatible): Alternative compiler for core modules
+- `rustup` (nightly toolchain with `build-std` support): Compiler for core Rust components
 - `make`: Build automation
 - Almost any virtual machine (e.g., QEMU, VirtualBox) or emulator (e.g., Bochs) that supports booting from a disk image.
 
@@ -38,6 +39,15 @@ Then, to build the OS, simply run:
 
 ```bash
 make clean && make
+```
+
+### Hybrid Rust Toolchain Setup
+
+To compile the bare-metal Rust module, ensure you have the `nightly` toolchain installed:
+
+```bash
+rustup toolchain install nightly
+rustup default nightly
 ```
 
 ### Running

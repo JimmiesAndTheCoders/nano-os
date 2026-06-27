@@ -47,7 +47,7 @@ This roadmap outlines the planned features and improvements for Nano OS. Below a
 <summary><b>Phase 2.5: Developer Tooling, Editor Improvements & Hybrid Runtime</b></summary>
 
 - [X] Configure the Zig build toolchain as an alternative compiler for core kernel modules.
-- [ ] Establish bare-metal target specifications for Rust cross-compilation on i686 architecture.
+- [X] Establish bare-metal target specifications for Rust cross-compilation on i686 architecture.
 - [ ] Integrate automated binding tools to generate compatible headers between C, C++, Rust, and Zig.
 - [ ] Rewrite physical frame validation logic in Rust to guarantee spatial safety during allocation.
 - [ ] Port the virtual file system path parsing routines to Zig to leverage native compile-time evaluation and error unions.
