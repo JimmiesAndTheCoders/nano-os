@@ -44,7 +44,7 @@ This roadmap outlines the planned features and improvements for Nano OS. Below a
 </details>
 
 <details>
-<summary><b>Phase 2.5: Modern Language Integration & Hybrid Runtime</b></summary>
+<summary><b>Phase 2.5: Developer Tooling, Editor Improvements & Hybrid Runtime</b></summary>
 
 - [X] Configure the Zig build toolchain as an alternative compiler for core kernel modules.
 - [ ] Establish bare-metal target specifications for Rust cross-compilation on i686 architecture.
@@ -53,6 +53,17 @@ This roadmap outlines the planned features and improvements for Nano OS. Below a
 - [ ] Port the virtual file system path parsing routines to Zig to leverage native compile-time evaluation and error unions.
 - [ ] Develop a dual-language panic runtime capable of cleanly unwinding hybrid stack frames on kernel panic.
 - [ ] Provide user-space application templates and system call wrapper libraries in both Zig and Rust.
+- [ ] Add support for text cursor navigation using keyboard arrow keys within the terminal text editor.
+- [ ] Implement horizontal and vertical scrolling in the text editor when file lengths exceed screen bounds.
+- [ ] Add line numbering and a dynamic status bar displaying active cursor coordinates.
+- [ ] Implement search and replace functionality with real-time prompt feedback inside the text editor.
+- [ ] Build a file save-as dialogue to safely export active editing buffers to alternative VFS paths.
+- [ ] Develop an undo and redo transaction buffer to track editing history changes.
+- [ ] Add automatic tab indentation and bracket matching logic to the editor engine.
+- [ ] Integrate basic syntax highlighting structures for text and source code editing.
+- [ ] Build an interactive keybinding helper window overlay accessible with a single hotkey.
+- [ ] Implement shell command history scrollback using the up and down arrow keys at the CLI prompt.
+- [ ] Integrate a real-time cursor tracking system in the screen console driver.
 
 </details>
 
