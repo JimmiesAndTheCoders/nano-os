@@ -21,9 +21,8 @@ This roadmap outlines the planned features and improvements for Nano OS. The pro
 
 </details>
 
-<br>
-
-Phase 2: Core Subsystems & Persistent Storage
+<details>
+<summary><b>Phase 2: Core Subsystems & Persistent Storage</b></summary>
 
 - [X] Add a PCI bus enumerator to detect, parse configuration spaces, and configure hardware.
 - [X] Add support for MSI/MSI-X (Message Signaled Interrupts) in the PCI driver.
@@ -40,18 +39,11 @@ Phase 2: Core Subsystems & Persistent Storage
 - [X] Pass environment variables and command-line arguments (argc/argv) to user programs.
 - [X] Implement Unix-like Signals for basic process control (e.g., SIGKILL, SIGINT).
 - [X] Implement Inter-Process Communication (IPC) via pipes, mailboxes, and shared memory (mmap).
-
-<details>
-<summary><b>Port a standard C library (libc) tailored to Nano OS system calls for user applications.</b></summary>
-
-- [X] Create the workspace and prepare the build pipeline.
-- [X] Write the bootstrap assembly wrapper that transitions execution from the ELF loader to the user program's `main` function.
-- [X] Bridge the gap between user-space code and the kernel's `int 0x80` interface.
-- [X] Implement essential string manipulation and memory state functions.
-- [X] Implement a memory allocator using a static block pool or standard memory expansion.
-- [ ] Provide a working implementation of `printf` and terminal-based inputs.
+- [X] Port a standard C library (libc) tailored to Nano OS system calls for user applications.
 
 </details>
+
+<br> 
 
 Phase 3: Desktop Environment & Windowing
 
