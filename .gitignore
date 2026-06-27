@@ -29,3 +29,6 @@ rust_kernel/target/
 # --- System Metadata ---
 .DS_Store
 Thumbs.db
+
+# --- Other ---
+nul
