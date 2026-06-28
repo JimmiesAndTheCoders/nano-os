@@ -16,6 +16,21 @@ void memory_copy(const char *source, char *dest, int no_bytes) {
     }
 }
 
+/* Standard memcpy: Required by Zig/LLVM and GCC for internal operations */
+void *memcpy(void *dest, const void *src, unsigned int n) {
+    char *d = (char *)dest;
+    const char *s = (const char *)src;
+    for (unsigned int i = 0; i < n; i++) {
+        d[i] = s[i];
+    }
+    return dest;
+}
+
+/* Dummy implementation of LLVM stack probing */
+void __zig_probe_stack() {
+    return;
+}
+
 /* Returns the length of a string */
 int strlen(const char *s) {
     int i = 0;

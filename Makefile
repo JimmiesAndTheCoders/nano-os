@@ -53,7 +53,7 @@ CPPFLAGS    = -ffreestanding -fno-pic -fno-pie -O2 -Wall -Wextra -fno-exceptions
 HOST_CFLAGS = -I$(INC_DIR) -Wall -Wextra -g -fno-builtin
 
 # Zig Compiler flags (freestanding 32-bit x86 target)
-ZIGFLAGS    = build-obj -target x86-freestanding-none -O ReleaseSafe
+ZIGFLAGS = build-obj -target x86-freestanding-none -O ReleaseSafe -Iinclude -Ilibc/include -fno-stack-check
 
 # Rust Environment Variables and Outputs
 RUST_DIR       = rust_kernel

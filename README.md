@@ -23,6 +23,7 @@ Nano OS is a lightweight, 32-bit hobby operating system developed from scratch. 
 - `i686-elf-gcc` / `i686-elf-ld`: Cross-compiler toolchain
 - `zig` (v0.16.0 or compatible): Alternative compiler for core modules
 - `rustup` (nightly toolchain with `build-std` support): Compiler for core Rust components
+- `LLVM / Clang`: Required for Rust automated binding generation (bindgen)
 - `make`: Build automation
 - Almost any virtual machine (e.g., QEMU, VirtualBox) or emulator (e.g., Bochs) that supports booting from a disk image.
 

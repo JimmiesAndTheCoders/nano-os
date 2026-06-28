@@ -3,6 +3,7 @@
 
 void memory_copy(const char *source, char *dest, int no_bytes);
 void memset(void *dest, unsigned char val, int count);
+void *memcpy(void *dest, const void *src, unsigned int n);
 
 /* String Utility Prototypes */
 int strlen(const char *s);

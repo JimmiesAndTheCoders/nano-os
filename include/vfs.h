@@ -12,6 +12,7 @@ extern "C" {
 #define VFS_PIPE        0x05
 #define VFS_SYMLINK     0x06
 #define VFS_MOUNTPOINT  0x08
+#define MAX_MOUNTS 16
 
 struct vfs_node;
 
@@ -50,6 +51,14 @@ struct dirent {
     char name[128];
     unsigned int inode;
 };
+
+typedef struct {
+    char path[128];
+    vfs_node_t* root_node;
+} vfs_mount_t;
+
+extern vfs_mount_t mount_table[MAX_MOUNTS];
+extern int mount_count;
 
 // Global root of the VFS
 extern vfs_node_t* vfs_root;

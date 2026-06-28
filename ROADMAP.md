@@ -50,7 +50,7 @@ This roadmap outlines the planned features and improvements for Nano OS. Below a
 - [X] Establish bare-metal target specifications for Rust cross-compilation on i686 architecture.
 - [X] Integrate automated binding tools to generate compatible headers between C, C++, Rust, and Zig.
 - [X] Rewrite physical frame validation logic in Rust to guarantee spatial safety during allocation.
-- [ ] Port the virtual file system path parsing routines to Zig to leverage native compile-time evaluation and error unions.
+- [X] Port the virtual file system path parsing routines to Zig to leverage native compile-time evaluation and error unions.
 - [ ] Develop a dual-language panic runtime capable of cleanly unwinding hybrid stack frames on kernel panic.
 - [ ] Provide user-space application templates and system call wrapper libraries in both Zig and Rust.
 - [ ] Add support for text cursor navigation using keyboard arrow keys within the terminal text editor.

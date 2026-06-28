@@ -227,6 +227,26 @@ Added feature:
 Rewritten files:
 - Physical frame validation logic in Rust to guarantee spatial safety during allocation.
 
+#### Beta 5
+
+**Date: 2026-06-28**
+
+Added features:
+- zig_module.zig implementing zig_vfs_resolve_path, panic, and zig_verify_safety.
+- MAX_MOUNTS macro to include/vfs.h.
+
+Renamed stuff
+- vfs_resolve_path in src/vfs.c now calls zig_vfs_resolve_path.
+
+Moved stuff:
+- mount table/mount_count moved to include/vfs.h and defined in src/vfs.c.
+
+Provided stuff:
+- memcpy and __zig_probe_stack in src/util.c to satisfy Zig/LLVM/GCC needs.
+
+Updated files:
+- Makefile ZIGFLAGS to include include/libc paths and disable Zig stack checks.
+
 <br>
 
 Nano OS is now built using an automated pipeline via GitHub Actions.

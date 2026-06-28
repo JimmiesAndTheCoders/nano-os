@@ -4,20 +4,18 @@
 #include "screen.h"
 #include "cache.h"
 
-#define MAX_MOUNTS 16
+// Reference the new Zig implementation
+extern vfs_node_t* zig_vfs_resolve_path(const char* path);
 
-typedef struct {
-    char path[128];
-    vfs_node_t* root_node;
-} vfs_mount_t;
-
-static vfs_mount_t mount_table[MAX_MOUNTS];
-static int mount_count = 0;
+// These are now declared 'extern' in vfs.h, we define them here once.
+vfs_mount_t mount_table[MAX_MOUNTS];
+int mount_count = 0;
 
 vfs_node_t* vfs_root = 0;
 static vfs_node_t root_node;
 static struct dirent g_dirent;
 
+// Internal helper for C-based directory listings (LS/CD)
 static vfs_node_t* get_mount_at(const char* path) {
     for (int i = 0; i < mount_count; i++) {
         if (strcmp(mount_table[i].path, path) == 0) {
@@ -132,48 +130,7 @@ int vfs_mount(const char* path, vfs_node_t* root_node) {
     return 0;
 }
 
+/* REWRITTEN: Path resolution is now handled by the Zig module */
 vfs_node_t* vfs_resolve_path(const char* path) {
-    if (!path || path[0] != '/') return 0;
-    if (strcmp(path, "/") == 0) return vfs_root;
-    
-    vfs_node_t* curr = vfs_root;
-    char path_copy[256];
-    memory_copy(path, path_copy, strlen(path) + 1);
-    
-    char current_accum[256] = "";
-    int accum_len = 0;
-    
-    char* token = path_copy + 1;
-    while (token && *token != '\0') {
-        char* slash = token;
-        while (*slash != '/' && *slash != '\0') slash++;
-        
-        char original_char = *slash;
-        *slash = '\0';
-        
-        current_accum[accum_len++] = '/';
-        int tok_len = strlen(token);
-        memory_copy(token, current_accum + accum_len, tok_len);
-        accum_len += tok_len;
-        current_accum[accum_len] = '\0';
-        
-        vfs_node_t* mounted = get_mount_at(current_accum);
-        if (mounted) {
-            curr = mounted;
-        } else {
-            if (!curr->finddir) return 0;
-            vfs_node_t* next_node = curr->finddir(curr, token);
-            if (curr != vfs_root && curr->flags != VFS_MOUNTPOINT) {
-                vfs_close(curr);
-            }
-            curr = next_node;
-            if (!curr) return 0;
-        }
-        
-        if (original_char == '\0') {
-            break;
-        }
-        token = slash + 1;
-    }
-    return curr;
+    return zig_vfs_resolve_path(path);
 }
