@@ -7,10 +7,16 @@
 #ifndef PMM_H
 #define PMM_H
 
-#define PAGE_SIZE       4096                    /* Each physical page frame is 4KB */
-#define MEMORY_LIMIT    (64 * 1024 * 1024)       /* Hardcoded limit for 64MB VirtualBox setup */
-#define TOTAL_BLOCKS    (MEMORY_LIMIT / PAGE_SIZE) /* 16,384 blocks */
-#define BITMAP_SIZE     (TOTAL_BLOCKS / 32)      /* 512 integers needed to represent 16,384 blocks */
+#ifndef PAGE_SIZE
+#define PAGE_SIZE       4096
+#endif
+
+#ifndef MEMORY_LIMIT
+#define MEMORY_LIMIT    (64 * 1024 * 1024)
+#endif
+
+#define TOTAL_BLOCKS    (MEMORY_LIMIT / PAGE_SIZE)
+#define BITMAP_SIZE     (TOTAL_BLOCKS / 32)
 
 /* Core Physical Memory Allocator API */
 void init_pmm(unsigned int start_free_mem);

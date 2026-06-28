@@ -6,6 +6,7 @@
 
 #include "pmm.h"
 #include "screen.h"
+#include "rust_interface.h"
 
 /* Static allocation bitmap: 512 integers of 32 bits each = 16,384 bits (blocks) */
 static unsigned int pmm_bitmap[BITMAP_SIZE];
@@ -17,22 +18,31 @@ static unsigned int used_blocks  = TOTAL_BLOCKS; /* Default to fully reserved */
 #define OFFSET_FROM_BIT(b) ((b) % 32)
 
 /* Internal Bitmap helpers */
-static void set_bit(int bit) {
-    int idx = INDEX_FROM_BIT(bit);
-    int off = OFFSET_FROM_BIT(bit);
-    pmm_bitmap[idx] |= (1 << off);
+static void set_bit(unsigned int addr) {
+    FrameValidation result = rust_validate_frame(addr);
+    if (!result.is_valid) return; // Spatial violation prevented
+
+    if (!(pmm_bitmap[result.bitmap_index] & (1 << result.bit_offset))) {
+        pmm_bitmap[result.bitmap_index] |= (1 << result.bit_offset);
+        used_blocks++;
+    }
 }
 
-static void clear_bit(int bit) {
-    int idx = INDEX_FROM_BIT(bit);
-    int off = OFFSET_FROM_BIT(bit);
-    pmm_bitmap[idx] &= ~(1 << off);
+static void clear_bit(unsigned int addr) {
+    FrameValidation result = rust_validate_frame(addr);
+    if (!result.is_valid) return; // Spatial violation prevented
+
+    if (pmm_bitmap[result.bitmap_index] & (1 << result.bit_offset)) {
+        pmm_bitmap[result.bitmap_index] &= ~(1 << result.bit_offset);
+        used_blocks--;
+    }
 }
 
-static int test_bit(int bit) {
-    int idx = INDEX_FROM_BIT(bit);
-    int off = OFFSET_FROM_BIT(bit);
-    return (pmm_bitmap[idx] & (1 << off)) != 0;
+static int test_bit(unsigned int addr) {
+    FrameValidation result = rust_validate_frame(addr);
+    if (!result.is_valid) return 1; // Assume used if invalid to prevent corruption
+    
+    return (pmm_bitmap[result.bitmap_index] & (1 << result.bit_offset)) != 0;
 }
 
 /* Finds the first free bit (0) in the bitmap array */

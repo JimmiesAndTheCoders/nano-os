@@ -220,6 +220,13 @@ Added feature:
 Added feature:
 - Automated Rust FFI generation and build integration
 
+#### Beta 4
+
+**Date: 2026-06-28**
+
+Rewritten files:
+- Physical frame validation logic in Rust to guarantee spatial safety during allocation.
+
 <br>
 
 Nano OS is now built using an automated pipeline via GitHub Actions.
