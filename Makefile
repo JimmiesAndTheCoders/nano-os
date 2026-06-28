@@ -78,7 +78,20 @@ LIBC_OBJS    = $(patsubst $(LIBC_DIR)/src/%.c, $(BUILD_DIR)/libc_%.o, $(LIBC_SOU
 SHELL_OBJS   = $(patsubst $(SRC_DIR)/shell/%.c, $(BUILD_DIR)/shell_%.o, $(SHELL_SOURCES))
 ALL_OBJS     = $(C_OBJS) $(CPP_OBJS) $(ZIG_OBJS) $(SHELL_OBJS)
 
-all: $(VDI_IMG)
+all: $(RUST_STATICLIB) $(VDI_IMG)
+
+# The Rust target now implicitly handles bindgen and cbindgen via cargo build
+$(RUST_STATICLIB):
+	@echo "[FFI] Detecting LLVM/Clang for bindgen..."
+	@# Setting LIBCLANG_PATH for Windows if it exists
+	@if [ -d "C:/Program Files/LLVM/bin" ]; then \
+		export LIBCLANG_PATH="C:/Program Files/LLVM/bin"; \
+	fi; \
+	cd $(RUST_DIR) && cargo +nightly build \
+		-Z build-std=core,compiler_builtins \
+		-Z json-target-spec \
+		--target i686-nano_os.json \
+		--release
 
 # Setup directories
 $(BUILD_DIR):
@@ -142,10 +155,6 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
 # Zig source compilation
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.zig | $(BUILD_DIR)
 	$(ZIG) $(ZIGFLAGS) $< -femit-bin=$@
-
-# Rust cargo compilation target
-$(RUST_STATICLIB):
-	cd $(RUST_DIR) && cargo build -Zjson-target-spec --release
 
 # Tool build
 $(MAKE_INITRD): $(TOOLS_DIR)/make_initrd.c | $(BUILD_DIR)

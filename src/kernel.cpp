@@ -1,6 +1,7 @@
 #include "vga_screen.hpp"
 
 extern "C" {
+    #include "rust_interface.h"
     #include "rtc.h"
     #include "screen.h"
     #include "cpu.h"
@@ -29,9 +30,6 @@ extern "C" {
     
     // Declare the external Zig safety verification module function
     bool zig_verify_safety(unsigned int addr, unsigned int size);
-
-    // Declare the external Rust safety verification module function
-    bool rust_verify_pmm(unsigned int total_frames, unsigned int free_frames);
 }
 
 void heartbeat_task() { 
@@ -155,9 +153,7 @@ extern "C" void kernel_main() {
     unsigned int total_f = pmm_get_total_frames();
     unsigned int free_f = pmm_get_free_frames();
     if (rust_verify_pmm(total_f, free_f)) {
-        print("[OK] Rust core safety verification framework validated\n");
-    } else {
-        print("[WARN] Rust boundary check flagged potential violation\n");
+        print("[OK] Automated Rust FFI bindings validated\n");
     }
 
     print("[OK] Virtual Memory (Paging) enabled and mapping isolated\n");

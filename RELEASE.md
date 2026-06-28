@@ -213,6 +213,13 @@ Added feature:
 Added feature:
 - Rust kernel
 
+#### Beta 3
+
+##### Date: 2026-06-28
+
+Added feature:
+- Automated Rust FFI generation and build integration
+
 <br>
 
 Nano OS is now built using an automated pipeline via GitHub Actions.

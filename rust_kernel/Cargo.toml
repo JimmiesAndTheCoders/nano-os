@@ -2,18 +2,13 @@
 name = "rust_kernel"
 version = "0.1.0"
 edition = "2021"
+build = "build.rs"
 
 [lib]
 crate-type = ["staticlib"]
 
 [dependencies]
 
-[build]
-target = "i686-nano_os.json"
-
-[unstable]
-build-std = ["core", "compiler_builtins"]
-
-# Bypasses local system MinGW dependency limitations during host script linking
-[target.x86_64-pc-windows-gnu]
-rustflags = ["-C", "link-self-contained=yes"]
+[build-dependencies]
+bindgen = "0.70"
+cbindgen = "0.26"
