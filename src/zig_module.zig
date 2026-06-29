@@ -2,6 +2,7 @@ const std = @import("std");
 
 const vfs = @cImport({
     @cInclude("vfs.h");
+    @cInclude("panic.h");
 });
 
 const VfsError = error{
@@ -86,9 +87,15 @@ export fn zig_verify_safety(addr: u32, size: u32) bool {
 }
 
 pub fn panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace, ret_addr: ?usize) noreturn {
+    // Explicitly discard all unused parameters to satisfy the compiler
     _ = msg;
     _ = error_return_trace;
     _ = ret_addr;
+
+    // Call our unified C++ panic handler
+    // We pass null for the registers_t* parameter since we aren't in an ISR
+    vfs.kpanic("Zig Module Logic Panic", null);
+
     while (true) {
         asm volatile ("hlt");
     }

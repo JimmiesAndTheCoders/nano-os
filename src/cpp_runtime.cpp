@@ -2,8 +2,11 @@
 
 extern "C" {
     #include "kmalloc.h"
+    #include "panic.h"
 
-    void __cxa_pure_virtual() { while (1); }
+    void __cxa_pure_virtual() {
+        kpanic("C++ Pure Virtual Function Call", 0);
+    }
 
     typedef void (*constructor)();
     extern constructor _start_ctors;

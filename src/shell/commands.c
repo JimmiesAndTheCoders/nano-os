@@ -1,4 +1,5 @@
 #include "shell.h"
+#include "panic.h"
 #include "elf.h"
 #include "rtc.h"
 #include "screen.h"
@@ -131,6 +132,7 @@ void process_command(char *input) {
         print("  ata-write [lba] [text]           - Write text to sector using PIO.\n");
         print("  ata-dma-read [lba] [count]       - Read sectors using DMA.\n");
         print("  ata-dma-write [lba] [text]       - Write text to sector using DMA.\n");
+        print("  crash-test   - Test crash.\n");
         print("  date         - View current Real-Time Clock date and time.\n");
         print("  sync         - Flush all dirty pages and blocks to disk.\n");
         print("  cache-stats  - View system page and buffer cache statistics.\n");
@@ -884,6 +886,9 @@ void process_command(char *input) {
         } else {
             print("Usage: ata-dma-write [lba] [text]\n");
         }
+    }
+    else if (strcmp(input, "crash-test") == 0) {
+        kpanic("Manual system crash for runtime verification", 0);
     }
     else if (strcmp(input, "date") == 0) {
         rtc_time_t t;

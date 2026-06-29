@@ -13,8 +13,8 @@ VgaScreen screen;
 VgaScreen::VgaScreen() : cursor_x(0), cursor_y(0) {}
 
 // Private helper to render a solid horizontal line at the bottom of the 16x16 text cell
-static void draw_vbe_cursor(int cx, int cy, unsigned int color) {
-    if (vbe_info->width == 0) return;
+void VgaScreen::draw_vbe_cursor(int cx, int cy, unsigned int color) {
+    if (vbe_info->width == 0 || !cursor_visible) return; // Respect flag
     int px_x = cx * 16;
     int px_y = cy * 16;
     for (int j = 14; j < 16; j++) {
@@ -26,10 +26,10 @@ static void draw_vbe_cursor(int cx, int cy, unsigned int color) {
 
 void VgaScreen::clear() {
     if (vbe_info->width > 0) {
-        fill_rect(0, 0, vbe_info->width, vbe_info->height, 0xFF000000); // Opaque black background
+        fill_rect(0, 0, vbe_info->width, vbe_info->height, bg_color);
         cursor_x = 0;
         cursor_y = 0;
-        draw_vbe_cursor(cursor_x, cursor_y, 0xFFFFFFFF); // Draw initial software cursor
+        draw_vbe_cursor(cursor_x, cursor_y, 0xFFFFFFFF);
     } else {
         unsigned char* vidmem = (unsigned char*)VIDEO_ADDRESS;
         for (int i = 0; i < MAX_ROWS * MAX_COLS; i++) {
@@ -67,12 +67,10 @@ static void draw_glyph(int px_x, int px_y, char c, unsigned int color) {
 
 void VgaScreen::put_char(char c) {
     if (vbe_info->width > 0) {
-        // --- GUI Mode (Pixels) ---
         int max_cols = vbe_info->width / 16;
         int max_rows = vbe_info->height / 16;
 
-        // Erase the software cursor at the old position before we update the state
-        draw_vbe_cursor(cursor_x, cursor_y, 0xFF000000); // Black
+        draw_vbe_cursor(cursor_x, cursor_y, bg_color); // Use bg_color
 
         if (c == '\n') {
             cursor_x = 0;
@@ -80,10 +78,10 @@ void VgaScreen::put_char(char c) {
         } else if (c == '\b') {
             if (cursor_x > 0) {
                 cursor_x--;
-                fill_rect(cursor_x * 16, cursor_y * 16, 16, 16, 0xFF000000); // Opaque black
+                fill_rect(cursor_x * 16, cursor_y * 16, 16, 16, bg_color); // Use bg_color
             }
         } else {
-            draw_glyph(cursor_x * 16, cursor_y * 16, c, 0xFFFFFFFF); // Opaque white text
+            draw_glyph(cursor_x * 16, cursor_y * 16, c, 0xFFFFFFFF);
             cursor_x++;
             if (cursor_x >= max_cols) {
                 cursor_x = 0;
@@ -91,21 +89,17 @@ void VgaScreen::put_char(char c) {
             }
         }
 
-        // Extremely basic graphical scrolling
         if (cursor_y >= max_rows) {
             int byte_size = vbe_info->height * vbe_info->pitch;
-            int row_size = 16 * vbe_info->pitch; // Scroll 1 line (16 px)
-            
+            int row_size = 16 * vbe_info->pitch;
             memory_copy((const char*)(vbe_info->framebuffer + row_size), 
                         (char*)(vbe_info->framebuffer), 
                         byte_size - row_size);
-            
-            fill_rect(0, (max_rows - 1) * 16, vbe_info->width, 16, 0xFF000000); // Opaque black line
+            fill_rect(0, (max_rows - 1) * 16, vbe_info->width, 16, bg_color); // Use bg_color
             cursor_y--;
         }
 
-        // Draw the software cursor at the new position
-        draw_vbe_cursor(cursor_x, cursor_y, 0xFFFFFFFF); // White
+        draw_vbe_cursor(cursor_x, cursor_y, 0xFFFFFFFF);
         return;
     }
 
@@ -164,11 +158,9 @@ void VgaScreen::set_cursor_offset(int offset) {
 
 void VgaScreen::set_cursor(int col, int row) {
     if (vbe_info->width > 0) {
-        // Erase old cursor before moving
-        draw_vbe_cursor(cursor_x, cursor_y, 0xFF000000);
+        draw_vbe_cursor(cursor_x, cursor_y, bg_color); // Use bg_color
         cursor_x = col;
         cursor_y = row;
-        // Draw new cursor at target coordinates
         draw_vbe_cursor(cursor_x, cursor_y, 0xFFFFFFFF);
     } else {
         set_cursor_offset(get_offset(col, row));

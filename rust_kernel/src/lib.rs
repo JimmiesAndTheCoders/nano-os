@@ -2,6 +2,11 @@
 
 use core::panic::PanicInfo;
 
+extern "C" {
+    // Import our central C panic handler
+    fn kpanic(message: *const u8, regs: *mut core::ffi::c_void);
+}
+
 // We use #[allow(dead_code)] and remove 'pub' from constants we don't want 
 // cbindgen to export to the C header, as they are already in pmm.h
 const PAGE_SIZE: u32 = 4096;
@@ -46,5 +51,10 @@ pub extern "C" fn rust_validate_frame(addr: u32) -> FrameValidation {
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
+    // Prefixed with underscore to satisfy compiler
+    let msg = b"Rust Kernel Module Exception\0";
+    unsafe {
+        kpanic(msg.as_ptr(), core::ptr::null_mut());
+    }
     loop {}
 }

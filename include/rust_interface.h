@@ -8,6 +8,8 @@ typedef struct FrameValidation {
   bool is_valid;
 } FrameValidation;
 
+extern void kpanic(const uint8_t *message, void *regs);
+
 /**
  * Verification function used by kernel.cpp diagnostics
  */

@@ -247,6 +247,13 @@ Provided stuff:
 Updated files:
 - Makefile ZIGFLAGS to include include/libc paths and disable Zig stack checks.
 
+#### Beta 6
+
+**Date: 2026-06-28**
+
+Added features:
+- A unified panic subsystem.
+
 <br>
 
 Nano OS is now built using an automated pipeline via GitHub Actions.
